@@ -3,16 +3,17 @@
 <head>
     <meta charset="ISO-8859-1">
     <title>Insert title here</title>
+    <script src="js/stock.js"></script>
 </head>
 <body>
 <form method="post" action="StockController.php">
     <label>
-        <input name="nameOfTheItem" type="text" required="required" placeholder="Name of the Item" autofocus="autofocus">
-        <input name="typeOfTheItem" type="text" required="required" placeholder="Type of the Item">
-        <input name="amount" type="number" required="required" placeholder="Amount">
-        <input name="price" type="text" required="required" placeholder="Price">
-        <input name="total" type="text" placeholder="Total (not required)">
-        <input type="submit" name="submitButton" value="Submit">
+        <input id="nameOfTheItem" type="text" required="required" placeholder="Name of the Item" autofocus="autofocus">
+        <input id="typeOfTheItem" type="text" required="required" placeholder="Type of the Item">
+        <input id="amount" type="number" required="required" placeholder="Amount">
+        <input id="price" type="text" required="required" placeholder="Price">
+        <input id="total" type="text" placeholder="Total (not required)">
+        <input type="submit" id="submitButton" onsubmit="collectData(); return false;" value="Submit">
     </label>
 </form>
 </body>
