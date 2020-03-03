@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/HttpRequest.js"></script>
+    <link href="css/style.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue"></script>
+</head>
+
+<!--<script type="text/x-template" id="modal-template">-->
+<!--    <embed width="100%" height="100%" src="">-->
+<!--</script>-->
+
+<script>
+    function getBase64Pdf() {
+        var request = new HttpRequest();
+        var value = location.search.substr(1).split('=')[1];
+        request.xmlHttpRequestInstance.onreadystatechange = function (ev) {
+            if (request.isRequestSuccessful()) {
+                var body = document.body;
+                var em = document.createElement("object");
+                em.type = "application/pdf";
+                em.data = "data:application/pdf;base64," + request.xmlHttpRequestInstance.responseText; //Response text always should be encoded to the base64 encoding.
+                em.width = "700px"; //Custom, so can be changed
+                em.height = "1000px"; //Custom, so can be changed
+                // el.innerHTML += '<embed width=100% height=100% type=\"application/pdf\" src=\"data:application/pdf;base64,' + d.xmlHttpRequestInstance.responseText + '></embed>';
+                body.appendChild(em);
+                // windows.close();
+            }
+        };
+        request.sendGETRequest('/icc/requests/generateRequestDocument?id=' + value, '');
+    }
+</script>
+
+<body onload="getBase64Pdf()" style="display: flex; justify-content: center; background-color: aliceblue;">
+
+</body>
+</html>

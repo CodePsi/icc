@@ -1,0 +1,280 @@
+<!--<?php-->
+<!--include_once "RequestController.php";-->
+<!--include_once "EmployeeController.php";-->
+<!--include_once "StockController.php";-->
+<!--include_once "PDFGenerator.php";-->
+<!--$rc = new RequestController();-->
+<!--$sc = new StockController();-->
+<!--$items = $sc -> getAllStockItems();-->
+
+<!--$select = "<select name=SELECT_NAME>";-->
+<!--foreach ($items as $item)-->
+<!--    $select .= "<option value='$item[0]'>$item[1]</option>";-->
+<!--$select .= $body_select;-->
+<!--$select .= "</select><input name=INPUT_NAME type='text' style='width: 50px;' required='required'><br/>";-->
+<!--//print_r($_POST);-->
+<!--error_reporting (E_ALL ^ E_NOTICE);-->
+
+<!--if (isset($_POST['close_request'])) {-->
+<!--    header("location: closeRequest.php?request_id=" . $_POST['close_request']);-->
+<!--}-->
+
+<!--/* For working there shouldn't be any printing or output of the text. Because in case with edit button you won't be able to change header because there is already some text-->
+<!--In case with printing there's already text so PDF won't display properly.    */-->
+
+<!--//if (isset($_POST['print'])) {-->
+<!--//    $request = $rc -> getRequestById($_POST['print']);-->
+<!--//    $ec = new EmployeeController();-->
+<!--//    $employee = $ec -> getEmployeeById(1);-->
+<!--//    $unix_time = strtotime($request[5]);-->
+<!--//    MPDFGenerator::generateRequest($request[0], date('Y-m-d', $unix_time), date('h:i:s', $unix_time), $employee[1], $employee[6], $employee[5], $request[2], $request[3], "", $request[4]);-->
+<!--//}-->
+<!--if (isset($_POST['edit'])) {-->
+<!--    header("location: editRequest.php?id=" . str_replace("\'", "", $_POST['edit']));-->
+<!--}-->
+<!--//echo "123";-->
+<!--if (isset($_POST['sort'])) {-->
+<!--    $table = $rc -> getRequestsAsTable(intval($_POST['sort']));-->
+<!--} else {-->
+<!--    $table = $rc -> getRequestsAsTable(-1);-->
+<!--}-->
+<!--?>-->
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Title</title>
+        <script src="js/HttpRequest.js"></script>
+        <link href="css/style.css" rel="stylesheet">
+        <script src="https://unpkg.com/vue"></script>
+
+        <!--        <link href="../pasha.css" rel="stylesheet">-->
+<!--        <script src="pasha.js"></script>-->
+        <script>
+            var items = 0;
+            //Checking actual amount of item and passed in real time.
+            function AddItem() {
+                var div=document.getElementById("items");
+                button=document.getElementById("add");
+                var newItem = "<?php echo $select; ?>";
+                newItem = newItem.replace('SELECT_NAME', 'sel' + items);
+                newItem = newItem.replace('INPUT_NAME', 'in' + items);
+                items++;
+                var newNode=document.createElement("span");
+                newNode.innerHTML=newItem;
+                div.insertBefore(newNode,button);
+            }
+        </script>
+    </head>
+    <body onload="init()">
+    <!--    <form method="POST">-->
+    <!--        <label>-->
+    <!--            <input type="checkbox" name="checkBox" onclick="onCheckButtonClick()" value="">-->
+    <!--            <button style="display: none;" id="button">Button</button>-->
+    <!--        </label>-->
+    <!--    </form>-->
+
+<!--    <button id="slider-left">left</button>-->
+    <!--<div id="fon"></div>-->
+    <!--<div id="slider"></div>-->
+<!--    <input >-->
+<!--    <button type="button"></button>-->
+    <div id="background">
+        <form method="POST">
+<!--                <?php echo $table; ?>-->
+        </form>
+    </div>
+
+    <!-- template for the modal component -->
+    <script type="text/x-template" id="modal-template">
+        <transition name="modal">
+            <div class="modal-mask">
+                <div class="modal-wrapper">
+                    <div class="modal-container" v-bind:style="{width: width}">
+
+                        <div class="modal-header">
+                            <slot name="header">
+                                Close request (ID: {{getActiveID()}})
+                            </slot>
+                        </div>
+
+                        <div class="modal-body">
+                            <slot name="body">
+                                Close request (ID: {{getActiveID()}})
+                            </slot>
+                        </div>
+
+                        <div class="modal-footer">
+                            <slot name="footer">
+                                <button class="modal-default-button" @click="$emit('execute')">
+                                    OK
+                                </button>
+                                <button class="modal-default-button" @click="$emit('close')">
+                                    Close
+                                </button>
+
+                            </slot>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+    </script>
+
+    <script type="text/x-template" id="grid-template">
+        <table>
+            <thead>
+            <tr>
+                <th v-for="key in columns"
+                    @click="sortBy(key)"
+                    :class="{ active: sortKey == key }">
+                    {{ key | capitalize }}
+                    <span class="arrow" :class="sortOrders[key] > 0 ? 'asc' : 'dsc'">
+          </span>
+                </th>
+                <th style="min-width: 20px"></th>
+                <th style="min-width: 20px"></th>
+                <th style="min-width: 20px"></th>
+                <th style="min-width: 20px"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="entry in filteredHeroes">
+                <td v-for="key in columns">
+                    {{entry[key]}}
+                </td>
+                <td style="min-width: 20px">
+<!--                    <button :value="entry['id']" @click="displayEditRequestModalWindow(entry['id'])">E</button>-->
+                    <input :value="entry['id']" @click="displayEditRequestModalWindow(entry['id'])" type="image" src="https://img2.freepng.ru/20180420/bqq/kisspng-computer-icons-writing-fonts-vector-5ada38828ce8b3.0081536415242507545772.jpg" style="max-width: 20px">
+                </td>
+                <td style="min-width: 20px" v-if="entry['status'] == 0 || entry['status'] == undefined">
+<!--                    <button :value="entry['id']" @click="displayModalWindow(entry['id'])" style="background-image: url('https://img2.freepng.ru/20180420/bqq/kisspng-computer-icons-writing-fonts-vector-5ada38828ce8b3.0081536415242507545772.jpg'); background-repeat: round;">-->
+                        <input :value="entry['id']" @click="displayCloseRequestModalWindow(entry['id'])" type="image" src="views/images/test2.png" style="max-width: 20px">
+                </td>
+                <td style="min-width: 20px">
+                    <button :value="entry['id']" @click="printRequest(entry['id'])">P</button>
+                </td>
+                <td style="min-width: 20px">
+                    <button :value="entry['id']">D</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </script>
+
+    <!-- app -->
+    <div id="app">
+        <!-- use the modal component, pass in the prop -->
+        <div class="main-container">
+            <button @click="openNewEntryRequestWindow()">Add New Request</button>
+            <modal width="500px" v-if="showNewEntryModal" @execute="closeNewEntryModalWindow()" @close="showNewEntryModal = false">
+                <h3 slot="header">
+                    Add New Entry
+                </h3>
+                <h3 slot="body">
+                    <label>
+                        <input type="datetime-local" v-model="date">
+                        <br/>
+
+                        <select name="employee" v-model="employee">
+                            <option v-for="option in employees" :value="option['id']">
+                                {{option['name'] + ' ' + option['surname'] + ' ' + option['patronymic'] + ', Position: ' + option['position'] + '; Contact Number: ' + option['contactNumber']}}
+                            </option>
+                        </select><br/>
+                        <select name="building" v-model="building">
+                            <option disabled="disabled">Buildings</option>
+                            <option>Main</option>
+                            <option>Humanitarian</option>
+                            <option>Preschool and technological education (PTD or DTO)</option>
+                            <option>Graphic art</option>
+                            <option>Musical</option>
+                            <option disabled="disabled">Dormitories</option>
+                            <option>Dormitory #1</option>
+                            <option>Dormitory #2</option>
+                            <option>Dormitory #3</option>
+                        </select>
+                        <br/>
+                        <input type="text" v-model="auditorium" name="auditorium" placeholder="Auditorium"><br/>
+                        <input type="text" v-model="cause" placeholder="The cause for the machine failure"><br/>
+                        <input type="text" v-model="chief" placeholder="Chief" readonly="readonly"><br/>
+                        <button name="submit">Add</button>
+                    </label>
+                </h3>
+            </modal>
+            <modal v-if="showModal" @execute="showModal = false">
+                <!--
+                  you can use custom content here to overwrite
+                  default content
+                -->
+                <h3 slot="body">
+                    test
+                </h3>
+            </modal>
+            <modal v-if="showCloseEntryModal" @close="showCloseEntryModal = false" @execute="closeRequest()">
+                <h3 slot="body">
+                    <label v-for="item in usedItems">
+                        <select :ref="item['option']">
+                            <option v-for="stockItem in stockItemEntries" :value="stockItem['id']">{{stockItem['itemName']}}</option>
+                        </select>
+                        <input :ref="item['input']">
+                        <br/>
+                    </label>
+
+                    <br/>
+                    <button @click="addInputBox()">Add Used Item</button>
+                    <hr>
+                    <label v-for="entry in inventoryNumbers">
+                        <input :ref="entry['inventoryNumber']">
+                    </label>
+                    <button @click="addInventoryNumberField()">Add New Inventory Number</button>
+                </h3>
+            </modal>
+            <modal width="500px" v-if="showEditEntryModal" @execute="updateRequest()">
+                <h3 slot="header">
+                    Edit Entry
+                </h3>
+                <h3 slot="body">
+                    <label>
+                        <input type="datetime-local" v-model="date">
+                        <br/>
+
+                        <select name="employee" v-model="employee">
+                            <option v-for="option in employees" :value="option['id']">
+                                {{option['name'] + ' ' + option['surname'] + ' ' + option['patronymic'] + ', Position: ' + option['position'] + '; Contact Number: ' + option['contactNumber']}}
+                            </option>
+                        </select><br/>
+                        <select name="building" v-model="building">
+                            <option disabled="disabled">Buildings</option>
+                            <option>Main</option>
+                            <option>Humanitarian</option>
+                            <option>Preschool and technological education (PTD or DTO)</option>
+                            <option>Graphic art</option>
+                            <option>Musical</option>
+                            <option disabled="disabled">Dormitories</option>
+                            <option>Dormitory #1</option>
+                            <option>Dormitory #2</option>
+                            <option>Dormitory #3</option>
+                        </select>
+                        <br/>
+                        <input type="text" v-model="auditorium" name="auditorium" placeholder="Auditorium"><br/>
+                        <input type="text" v-model="cause" placeholder="The cause for the machine failure"><br/>
+                        <input type="text" v-model="chief" placeholder="Chief" readonly="readonly"><br/>
+                        <input type="text" v-model="status" placeholder="Status"><br/>
+                    </label>
+                </h3>
+            </modal>
+            <form id="search">
+                Search <input name="query" v-model="searchQuery">
+            </form>
+            <grid
+                    :heroes="gridData"
+                    :columns="gridColumns"
+                    :filter-key="searchQuery">
+            </grid>
+
+        </div>
+    </div>
+    <script src="js/request.js"></script>
+    </body>
+</html>

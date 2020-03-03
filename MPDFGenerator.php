@@ -3,7 +3,7 @@
 namespace Icc;
 use Mpdf\Mpdf;
 use Mpdf\MpdfException;
-use Icc\Utils;
+use Icc\Utils\Utils;
 require __DIR__ . "/../vendor/autoload.php";
 
 class MPDFGenerator {
@@ -51,15 +51,19 @@ class MPDFGenerator {
      * @param $phone
      * @param $building
      * @param $auditorium
-     * @param $inventory_number
+     * @param $inventoryNumbers
      * @param $task
      * @return string document information for further encoding (mostly it is used for passing data between client and server and just encoding retrieved information)
      */
-    public function generateRequest($number_id, $date, $time, $responsiblePerson, $position, $phone, $building, $auditorium, $inventory_number, $task) {
+    public function generateRequest($number_id, $date, $time, $responsiblePerson, $position, $phone, $building, $auditorium, $inventoryNumbers, $task) {
         try {
             $mpdf = new \Mpdf\Mpdf([
 
             ]);
+            $inventory_number = '';
+            foreach ($inventoryNumbers as $item) {
+                $inventory_number .= $item . ', ';
+            }
             if (empty($inventory_number)) {
                 $inventory_number = '________________';
             }
@@ -131,8 +135,7 @@ class MPDFGenerator {
                 </div>
             </body>
             ');
-            $doc = $mpdf -> Output("doc.pdf", "S");
-            return $doc;
+            return $mpdf -> Output("doc.pdf", "S");
         } catch (MpdfException $e) {
         }
         return "ERROR";
@@ -195,6 +198,7 @@ class MPDFGenerator {
      * @param $head string
      * @param $members string array
      * @param $items two-dimensional array
+     * @return string|null
      */
     public function actOfInstallation(string $date, string $responsible_person, string $head, array $members, $items) {
         try {

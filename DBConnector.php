@@ -31,5 +31,9 @@ class DBConnector
     public function close() {
         self::$mysqli -> close();
     }
+
+    public function getLastInsertedId() {
+        return self::$mysqli -> insert_id;
+    }
 }
 

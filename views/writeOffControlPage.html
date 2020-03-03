@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My first Vue app</title>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="js/HttpRequest.js"></script>
+    <script src="js/TableBuilder.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+    <body>
+        <div id="app">
+            <div class="main-container">
+                <div class="row-container">
+                    <div class="cell-container">
+                        <p class="cell-text">Start date</p>
+                        <label>
+                            <input v-model="startDate" type="date">
+                        </label>
+                        <p class="cell-text">End date</p>
+                        <label>
+                            <input v-model="endDate" type="date">
+                        </label>
+    <!--                <br/>-->
+                        <button class="standard-button" onclick="addNewWriteOffAct()">Add write off act from {{ startDate }} to {{ endDate }}</button>
+
+                    </div>
+                    <div class="cell-container">
+                        <p class="cell-text">Getting All Write Off Acts</p>
+                        <button class="standard-button" onclick="getAllWriteOffActs()">Get all write off acts</button>
+                    </div>
+                </div>
+                <div id="pdf-container"></div>
+
+            </div>
+
+        </div>
+
+        <script src="js/writeOffAct.js"></script>
+    </body>
+</html>

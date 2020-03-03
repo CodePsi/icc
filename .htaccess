@@ -1,0 +1,8 @@
+RewriteEngine On
+
+RewriteCond %{SCRIPT_FILENAME} !-d
+RewriteCond %{SCRIPT_FILENAME} !-f
+
+#The QSA flag is used for passing and appending an existing query after an URL
+#The L flag is used for stopping every single following rule after that one
+RewriteRule ^(.*)$ ./index.php [QSA,L]

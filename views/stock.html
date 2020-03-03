@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="js/HttpRequest.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body onload="init()">
+    <div id="app">
+        <div class="main-container">
+            <div class="row-container">
+                <div class="cell-container">
+                    <p class="cell-text" id="addNewItemText">Add New Stock Item</p>
+                    <label>
+                        <span class="cell-text">Name: </span><input id="nameOfTheItem" type="text" required="required" placeholder="Name of the Item" autofocus="autofocus" autocomplete="off"><br/>
+                        <span class="cell-text">Type: </span><input id="typeOfTheItem" type="text" required="required" placeholder="Type of the Item" autocomplete="off"><br/>
+                        <span class="cell-text">Amount: </span><input id="amount" id="amount" type="number" required="required" placeholder="Amount" autocomplete="off"><br/>
+                        <span class="cell-text">Price: </span><input id="price" id="price" type="text" required="required" placeholder="Price" autocomplete="off"><br/> <!--- Add checking with js tricks --->
+                        <span class="cell-text">Total: </span><input type="text" :value="totalSum" id="total" placeholder="Total (not required)" autocomplete="off"><br/>
+                        <span class="cell-text">Responsible: </span><select id="responsible" required="required">
+
+                        </select><br/>
+                        <span class="cell-text">Code: </span><input id="code" type="text" placeholder="Code" autocomplete="off"><br/> <!-- It can be empty because there's not always a need for specification of code -->
+                        <input type="submit" id="submitButton" value="Submit"><br/>
+                    </label>
+                </div>
+                <div class="cell-container">
+                    <p class="cell-text">Getting All Stock Items</p>
+                    <button class="standard-button" onclick="getAllStockItems()">Get All Stock Items</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/stock.js"></script>
+
+</body>
+</html>

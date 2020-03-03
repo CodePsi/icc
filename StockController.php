@@ -100,7 +100,7 @@ class StockController
         $i = 0;
         if (!empty($items))
             foreach ($items as $id => $amount) {
-                $this -> db -> execute_query("INSERT INTO used_items(id, request_id, item_id, amount, date, inventory_number) VALUES(DEFAULT, $request_id, $id, $amount, '$now', $inventory_numbers[$i])");
+                $this -> db -> execute_query("INSERT INTO used_item(id, request_id, item_id, amount, date, inventory_number) VALUES(DEFAULT, $request_id, $id, $amount, '$now', $inventory_numbers[$i])");
                 $this -> db -> execute_query("UPDATE stock_item SET amount=amount-$amount WHERE id=$id");
                 $i++;
             }
