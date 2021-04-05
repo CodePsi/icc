@@ -4,7 +4,7 @@
 namespace Icc\Model;
 
 
-class UsedItem
+class UsedItem implements \JsonSerializable
 {
     /**
      * @var
@@ -148,6 +148,9 @@ class UsedItem
     }
 
 
-
-
+    public function jsonSerialize()
+    {
+        return array('id' => intval($this -> getId()), 'requestId' => intval($this -> getRequestId()), 'itemId' => intval($this -> getItemId(),),
+            'amount' => doubleval($this -> amount), 'date' => $this -> date, 'inventoryNumber' => $this -> inventoryNumber);
+    }
 }

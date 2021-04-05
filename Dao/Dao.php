@@ -1,5 +1,5 @@
 <?php
-namespace icc\Dao;
+namespace Icc\Dao;
 
 interface Dao
 {

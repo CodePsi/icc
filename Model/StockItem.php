@@ -1,7 +1,7 @@
 <?php
 namespace Icc\Model;
 
-class StockItem
+class StockItem implements \JsonSerializable
 {
     /**
      * @var int
@@ -15,6 +15,10 @@ class StockItem
      * @var string
      */
     private $type;
+    /**
+     * @var string
+    */
+    private $unit;
     /**
      * @var int
      */
@@ -38,20 +42,22 @@ class StockItem
 
     /**
      * StockItem constructor.
-     * @param $id
-     * @param $itemName
-     * @param $type
-     * @param $amount
-     * @param $price
-     * @param $total
-     * @param $responsiblePerson
-     * @param $code
+     * @param int $id
+     * @param string $itemName
+     * @param string $type
+     * @param string $unit
+     * @param float $amount
+     * @param float $price
+     * @param float $total
+     * @param int $responsiblePerson
+     * @param string $code
      */
-    public function __construct(int $id, string $itemName, string $type, int $amount, float $price, float $total, int $responsiblePerson, string $code)
+    public function __construct(int $id, string $itemName, string $type, string $unit, float $amount, float $price, float $total, int $responsiblePerson, string $code)
     {
         $this->id = $id;
         $this->itemName = $itemName;
         $this->type = $type;
+        $this->unit = $unit;
         $this->amount = $amount;
         $this->price = $price;
         $this->total = $total;
@@ -106,6 +112,22 @@ class StockItem
     public function setType($type): void
     {
         $this->type = $type;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUnit(): string
+    {
+        return $this->unit;
+    }
+
+    /**
+     * @param string $unit
+     */
+    public function setUnit(string $unit): void
+    {
+        $this->unit = $unit;
     }
 
     /**
@@ -189,11 +211,14 @@ class StockItem
     }
 
     public function toJson(): string {
-        return json_encode(array($this -> getId(), $this -> getItemName(), $this -> getType(), $this -> getAmount(), $this -> getPrice(),
-            $this -> getTotal(), $this -> getResponsiblePerson(), $this -> getCode()), JSON_FORCE_OBJECT);
+        return json_encode(array('id' => $this -> getId(), 'itemName' => $this -> getItemName(), 'type' => $this -> getType(), 'unit' => $this -> getUnit(), 'amount' => $this -> getAmount(), 'price' => $this -> getPrice(),
+            'total' => $this -> getTotal(), 'responsible' => $this -> getResponsiblePerson(), 'code' => $this -> getCode()), JSON_FORCE_OBJECT);
     }
 
 
-
-
+    public function jsonSerialize(): array
+    {
+        return array('id' => intval($this -> getId()), 'itemName' => $this -> getItemName(), 'type' => $this -> getType(), 'unit' => $this -> getUnit(), 'amount' => $this -> getAmount(), 'price' => number_format(floatval($this -> getPrice()), 2),
+            'total' => number_format(floatval($this -> getTotal()), 2), 'responsiblePerson' => intval($this -> getResponsiblePerson()), 'code' => $this -> getCode());
+    }
 }

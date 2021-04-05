@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<!--    <script src="https://unpkg.com/vue"></script>-->
+    <script src="/icc/js/vue.js"></script>
+    <title>ICC - Test Page</title>
+    <script src="https://unpkg.com/vuex"></script>
+<!--    <script src="http://localhost:8098"></script>-->
+    <script src="/icc/js/http/HttpRequest.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/icc/css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+
+
+
+<body>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="/icc/js/components/icc-header.js"></script>
+    <script src="/icc/js/components/grid-table.js"></script>
+    <script src="/icc/js/components/modal-window.js"></script>
+    <script src="/icc/js/components/ToolBox.js"></script>
+    <script src="/icc/js/components/un-button.js"></script>
+    <div id="app">
+        <icc-header></icc-header>
+        <main class="main-container">
+            <div class="content-container">
+<!--                <un-button type="cancel">Cancel</un-button>-->
+                <comp-table
+                        :data="tableData"
+                        :filter-key="searchQuery"
+                        :pagination="true"
+                        :table-row-class-name="determineRowClassName">
+                    <template slot="table-columns">
+                        <pb-table-header-column label="Id" property="id" sortable>
+                            Id
+                        </pb-table-header-column>
+                        <pb-table-header-column label="Name" property="test">
+                            Name
+                        </pb-table-header-column>
+                        <pb-table-header-column label="Long text" property="anotherValue">
+                            Long text
+                        </pb-table-header-column>
+                    </template>
+                    <template slot="toolbox-header">
+                        <pb-table-header-column style="min-width: 20px"></pb-table-header-column>
+                        <pb-table-header-column style="min-width: 20px"></pb-table-header-column>
+                    </template>
+                    <template slot="toolbox-rows" slot-scope="entry">
+<!--                        <toolbox @click="modal = true" type="image" src="/icc/views/images/editIcon.jpg" :value="entry.entry.id"></toolbox>-->
+                        <pb-table-column><button @click="openModalWindow(entry.entry.id)" class="icon-button"><span class="material-icons md-18" :value="entry.entry.id">create</span></button></pb-table-column>
+                        <pb-table-column><button @click="modal = true" class="icon-button"><span class="material-icons md-18" :value="entry.entry.id">delete</span></button></pb-table-column>
+                    </template>
+                </comp-table>
+                <modal :visible.sync="modal">
+                    <div class="modal-body-container" slot="body">
+                        <template>
+                            <el-select v-model="test" filterable placeholder="Select">
+                            <el-option
+                                    v-for="item in options"
+                                    :key="item.value"
+                                    :label="item.label"
+                                    :value="item.value">
+                            </el-option>
+                        </el-select>
+                            <el-select v-model="test" filterable placeholder="Select">
+                                <el-option
+                                        v-for="item in options"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                </el-option>
+                            </el-select>
+                            <el-select v-model="test" filterable placeholder="Select">
+                                <el-option
+                                        v-for="item in options"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                </el-option>
+                            </el-select></template>
+                        {{activeId}}
+                    </div>
+                    <template slot="footer">
+                        <un-button @close="modal = false" type="cancel">Cancel</un-button>
+                        <un-button>Submit</un-button>
+                    </template>
+                </modal>
+            </div>
+
+        </main>
+    </div>
+
+<script src="/icc/js/test.js"></script>
+</body>
+</html>

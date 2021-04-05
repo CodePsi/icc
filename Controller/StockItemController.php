@@ -5,17 +5,19 @@ namespace Icc\Controller;
 
 
 use Icc\Dao\StockItemDao;
+use Icc\DBConnector;
 use Icc\Model\Employee;
 use Icc\Model\IncorrectObjectTypeException;
 use Icc\Model\NotFoundItemException;
 use Icc\Model\StockItem;
+use function Icc\Response\queryParameter;
 
 class StockItemController
 {
 
-    public static function addNewStockItem($itemName, $type, $amount, $price, $total, $responsiblePersonEmployeeId, $code) {
+    public static function addNewStockItem($itemName, $type, $unit, $amount, $price, $total, $responsiblePersonEmployeeId, $code) {
         $dao = new StockItemDao();
-        $entity = new StockItem(-1, $itemName, $type, $amount, $price, $total, $responsiblePersonEmployeeId, $code);
+        $entity = new StockItem(-1, $itemName, $type, $unit, $amount, $price, $total, $responsiblePersonEmployeeId, $code);
         try {
             $dao->save($entity);
             echo "Success";
@@ -27,7 +29,7 @@ class StockItemController
     public static function getStockItem($id) {
         $dao = new StockItemDao();
         try {
-            echo $dao -> get(intval($id)) -> toJson();
+            echo json_encode($dao -> get(intval($id)));
         } catch (NotFoundItemException $e) {
             echo $e;
         }
@@ -37,15 +39,33 @@ class StockItemController
 
     public static function getAllStockItems() {
         $dao = new StockItemDao();
-        $array = $dao -> getAll();
-        for ($i = 0; $i < count($array); $i++) {
-            $array[$i][0] = intval($array[$i][0]);
-            $array[$i][2] = intval($array[$i][2]);
-            $array[$i][3] = floatval($array[$i][3]);
-            $array[$i][4] = floatval($array[$i][4]);
-            $array[$i][5] = intval($array[$i][5]);
+        echo json_encode($dao -> convertArrayToModels($dao -> getAll()));
+    }
+
+    public static function updateStockItem($id, $itemName, $type, $unit, $amount, $price, $total, $responsible, $code)
+    {
+        $stockItemDao = new StockItemDao();
+        try {
+            if ($responsible === 'NULL') {
+                $responsible = -1;
+            }
+            $stockItem = new StockItem($id, $itemName, $type, $unit, $amount, $price, $total, $responsible, $code);
+            $stockItemDao -> update($stockItem);
+            echo DBConnector::getStatus();
+        } catch (IncorrectObjectTypeException $e) {
+            echo $e;
         }
-        echo json_encode($array);
+    }
+
+    public static function deleteStockItem($id)
+    {
+        $dao = new StockItemDao();
+        try {
+            $dao -> delete($id);
+            echo "Success";
+        } catch (NotFoundItemException $e) {
+            echo $e;
+        }
     }
 
 }

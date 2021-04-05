@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+<!--    <script src="https://unpkg.com/vue"></script>-->
+    <script src="/icc/js/vue.js"></script>
+    <script src="/icc/js/http/HttpRequest.js"></script>
+    <link rel="stylesheet" href="/icc/css/login.css">
+
+</head>
+<body>
+    <div id="app">
+<!--        <div v-bind:style="testStyle" class="loading">test</div>-->
+        <div style="">
+
+            <div class='bold-line'></div>
+            <div class='container'>
+                <div class='window'>
+                    <div class='overlay'></div>
+                    <div class='content'>
+                        <div class='welcome'>Hello There!</div>
+                        <div class='subtitle'>We're almost done. Before using our services you need to create an account.</div>
+                        <div v-bind:style="warning" class="subtitle">Incorrect data! Try again, please!</div>
+                        <div class='input-fields'>
+                            <input type='text' placeholder='Username' class='input-line full-width' v-model="login">
+                            <input type='password' placeholder='Password' class='input-line full-width' v-model="password">
+
+                        </div>
+                        <div class='spacing'><span class='highlight'></span></div>
+                        <div><button class='ghost-round full-width' @click="loginJWT()">Log In</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/icc/js/loginPage.js"></script>
+
+</body>
+</html>

@@ -4,7 +4,7 @@
 namespace Icc\Dao;
 
 
-use Icc\DBConnector;
+use Icc\Database\DBConnector;
 use Icc\Model\IncorrectObjectTypeException;
 use Icc\Model\NotFoundItemException;
 use Icc\Model\Request;
@@ -16,7 +16,7 @@ class RequestDao extends AbstractDao implements Dao, ModelConverter
     private $connection;
     public function __construct()
     {
-        $this -> connection = new DBConnector();
+        $this -> connection = DBConnector::getInstance();
     }
 
     /**
@@ -46,13 +46,16 @@ class RequestDao extends AbstractDao implements Dao, ModelConverter
     function save(object $object): int
     {
         if ($object instanceof Request) {
-            $formatString = sprintf("INSERT INTO request(id, employee_id, building, auditorium, reason, date, status) VALUES (DEFAULT, %d, '%s', '%s', '%s', '%s', %d);",
+
+            $formatString = sprintf("INSERT INTO request(id, employee_id, building, auditorium, reason, date, status, technical_ticket_needed) VALUES (DEFAULT, %d, '%s', '%s', '%s', '%s', %d, %d);",
                 $object -> getEmployeeId(),
                 $object -> getBuilding(),
                 $object -> getAuditorium(),
-                $object -> getReason(),
+                DBConnector::getMysqli() -> real_escape_string($object -> getReason()),
                 $object -> getDate(),
-                $object -> getStatus());
+                $object -> getStatus(),
+                $object -> getTechnicalTicketNeeded());
+            var_dump($formatString);
             $this -> connection -> execute_query($formatString);
             return $this -> connection -> getLastInsertedId();
         }
@@ -86,9 +89,11 @@ class RequestDao extends AbstractDao implements Dao, ModelConverter
                      auditorium = '%s',
                      reason = '%s',
                      date = '%s',
-                     status = %d WHERE id=%d",
+                     status = %d,
+                     technical_ticket_needed = %d WHERE id=%d",
                 $object -> getEmployeeId(), $object -> getBuilding(), $object -> getAuditorium(),
-                $object -> getReason(), $object -> getDate(), $object -> getStatus(), $object -> getId());
+                DBConnector::getMysqli() -> real_escape_string($object -> getReason()), $object -> getDate(),
+                $object -> getStatus(), $object -> getTechnicalTicketNeeded(), $object -> getId());
             return $this->connection->execute_query($formatString);
         }
 
@@ -114,13 +119,14 @@ class RequestDao extends AbstractDao implements Dao, ModelConverter
     {
         $fetchedRow = $mysqliResult -> fetch_row();
         Utils::cleanArrayFromNull($fetchedRow);
-        return new Request($fetchedRow[0],
-            $fetchedRow[1],
+        return new Request(intval($fetchedRow[0]),
+            intval($fetchedRow[1]),
             $fetchedRow[2],
             $fetchedRow[3],
             $fetchedRow[4],
             $fetchedRow[5],
-            $fetchedRow[6]);
+            boolval($fetchedRow[6]),
+            boolval($fetchedRow[7]));
     }
 
 
@@ -135,5 +141,23 @@ class RequestDao extends AbstractDao implements Dao, ModelConverter
         $stringAndClausesBuilder = $this->buildAndClauses($fields, $values, $operators);
         $result = $this -> connection -> execute_query("SELECT * FROM request WHERE $stringAndClausesBuilder;");
         return $result -> fetch_all();
+    }
+
+    function convertArrayToModels(array $array): array
+    {
+        $resultArray = array();
+        foreach ($array as $value) {
+            Utils::cleanArrayFromNull($value, '');
+            array_push($resultArray, new Request($value[0],
+                $value[1],
+                $value[2],
+                $value[3],
+                $value[4],
+                $value[5],
+                $value[6],
+                $value[7]));
+        }
+
+        return $resultArray;
     }
 }

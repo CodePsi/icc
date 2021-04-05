@@ -1,5 +1,5 @@
 <?php
-namespace Icc;
+namespace Icc\Render;
 
 class View
 {

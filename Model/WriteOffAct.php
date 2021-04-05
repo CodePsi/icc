@@ -6,7 +6,7 @@ namespace Icc\Model;
 
 use Icc\Dao\StockItemDao;
 
-class WriteOffAct
+class WriteOffAct implements \JsonSerializable
 {
     /**
      * @var
@@ -21,17 +21,21 @@ class WriteOffAct
      */
     private $endDate;
 
+    private $responsiblePersonEmployeeId;
+
     /**
      * WriteOffActDao constructor.
      * @param $id
      * @param $startDate
      * @param $endDate
+     * @param $responsiblePersonEmployeeId
      */
-    public function __construct($id, $startDate, $endDate)
+    public function __construct($id, $startDate, $endDate, $responsiblePersonEmployeeId)
     {
         $this->id = $id;
         $this->startDate = $startDate;
         $this->endDate = $endDate;
+        $this->responsiblePersonEmployeeId = $responsiblePersonEmployeeId;
     }
 
 
@@ -90,9 +94,9 @@ class WriteOffAct
             try {
                 $stockItem = $dao->get($usedItem[2]);
                 array_push($itemsForTable,
-                    array($stockItem -> getItemName(), $stockItem -> getType(),
+                    array($stockItem -> getItemName(), $stockItem -> getUnit(),
                         $usedItem[3], $stockItem -> getPrice(), $stockItem -> getPrice() * $usedItem[3],
-                        'Installed in ' . $stockItem -> getCode()));
+                        'Встановлено в ' . $usedItem[5]));
             } catch (NotFoundItemException $e) {
                 echo $e;
             }
@@ -101,5 +105,29 @@ class WriteOffAct
         return $itemsForTable;
     }
 
+    /**
+     * @return mixed
+     */
+    public function getResponsiblePersonEmployeeId()
+    {
+        return $this->responsiblePersonEmployeeId;
+    }
 
+    /**
+     * @param int $responsiblePersonEmployeeId
+     */
+    public function setResponsiblePersonEmployeeId(int $responsiblePersonEmployeeId): void
+    {
+        $this->responsiblePersonEmployeeId = $responsiblePersonEmployeeId;
+    }
+
+    public function toJson() {
+        return json_encode(array('id' => $this -> getId(), 'startDate' => $this -> getStartDate(), 'endDate' => $this->getEndDate()));
+    }
+
+    public function jsonSerialize(): array
+    {
+        return array('id' => intval($this -> getId()), 'startDate' => $this -> getStartDate(),
+            'endDate' => $this->getEndDate(), 'responsiblePerson' => intval($this -> getResponsiblePersonEmployeeId()));
+    }
 }

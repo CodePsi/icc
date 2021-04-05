@@ -20,4 +20,9 @@ class UsedItemController
             echo $e;
         }
     }
+
+    public static function getAllUsedItems() {
+        $dao = new UsedItemDao();
+        echo json_encode($dao -> convertArrayToModels($dao->getAll()));
+    }
 }

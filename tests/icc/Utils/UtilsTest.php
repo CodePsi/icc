@@ -18,4 +18,8 @@ class UtilsTest extends TestCase
         Utils::cleanArrayFromNull($this->array);
         $this -> assertNotNull($this->array[1]);
     }
+
+    public function testNumberToWords() {
+//        echo Utils::number_to_words(27);
+    }
 }

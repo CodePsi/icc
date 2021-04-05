@@ -4,7 +4,7 @@
 namespace Icc\Dao;
 
 
-use Icc\DBConnector;
+use Icc\Database\DBConnector;
 use Icc\Model\IncorrectObjectTypeException;
 use Icc\Model\NotFoundItemException;
 use Icc\Model\WriteOffAct;
@@ -16,7 +16,7 @@ class WriteOffActDao extends AbstractDao implements Dao, ModelConverter
     private $connection;
     public function __construct()
     {
-        $this -> connection = new DBConnector();
+        $this -> connection = DBConnector::getInstance();
     }
 
     /**
@@ -24,13 +24,12 @@ class WriteOffActDao extends AbstractDao implements Dao, ModelConverter
      *
      * @param int $id
      * @return object
-     * @throws NotFoundItemException
      */
     function get(int $id): object
     {
         $item = $this -> connection -> execute_query("SELECT * FROM write_off_act WHERE id=$id");
         if (!$item || $item -> num_rows === 0) {
-            throw new NotFoundItemException("Not found item. Error: " . DBConnector::$mysqli -> error);
+            return new WriteOffAct(-1, '', '', -1);
         }
 
         return $this -> convertMysqlResultToModel($item);
@@ -46,9 +45,10 @@ class WriteOffActDao extends AbstractDao implements Dao, ModelConverter
     function save(object $object): int
     {
         if ($object instanceof WriteOffAct) {
-            $formatString = sprintf("INSERT INTO write_off_act(id, start_date, end_date) VALUES (DEFAULT, '%s', '%s');",
+            $formatString = sprintf("INSERT INTO write_off_act(id, start_date, end_date, responsible_person_employee_id) VALUES (DEFAULT, '%s', '%s', %d);",
                 $object -> getStartDate() -> format('Y-m-d'),
-                $object -> getEndDate() -> format('Y-m-d'));
+                $object -> getEndDate() -> format('Y-m-d'),
+                $object -> getResponsiblePersonEmployeeId());
             $this -> connection -> execute_query($formatString);
             return $this -> connection -> getLastInsertedId();
         }
@@ -78,8 +78,9 @@ class WriteOffActDao extends AbstractDao implements Dao, ModelConverter
         if ($object instanceof WriteOffAct) {
             $formatString = sprintf("UPDATE write_off_act SET
                      start_date = '%s',
-                     end_date = '%s' WHERE id=%d",
-                $object -> getStartDate(), $object -> getEndDate(), $object -> getId());
+                     end_date = '%s',
+                     responsible_person_employee_id = %d WHERE id=%d",
+                $object -> getStartDate(), $object -> getEndDate(), $object -> getResponsiblePersonEmployeeId(), $object -> getId());
             return $this->connection->execute_query($formatString);
         }
 
@@ -107,7 +108,8 @@ class WriteOffActDao extends AbstractDao implements Dao, ModelConverter
         Utils::cleanArrayFromNull($fetchedRow);
         return new WriteOffAct($fetchedRow[0],
             $fetchedRow[1],
-            $fetchedRow[2]);
+            $fetchedRow[2],
+            $fetchedRow[3]);
     }
 
 
@@ -120,8 +122,21 @@ class WriteOffActDao extends AbstractDao implements Dao, ModelConverter
     function where(array $fields, array $values, array $operators): array
     {
         $stringAndClausesBuilder = $this->buildAndClauses($fields, $values, $operators);
-//        echo "SELECT * FROM write_off_act WHERE $stringAndClausesBuilder;";
         $result = $this -> connection -> execute_query("SELECT * FROM write_off_act WHERE $stringAndClausesBuilder;");
         return $result -> fetch_all();
+    }
+
+    function convertArrayToModels(array $array): array
+    {
+        $resultArray = array();
+        foreach ($array as $value) {
+            Utils::cleanArrayFromNull($value);
+            array_push($resultArray, new WriteOffAct($value[0],
+                $value[1],
+                $value[2],
+                $value[3]));
+        }
+
+        return $resultArray;
     }
 }

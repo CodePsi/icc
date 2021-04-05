@@ -1,40 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>My first Vue app</title>
-    <script src="https://unpkg.com/vue"></script>
-    <script src="js/HttpRequest.js"></script>
-    <script src="js/TableBuilder.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <title>ICC - Write Off Acts</title>
+<!--    <link rel="stylesheet" href="/icc/js/extLibs/element-ui_lib_theme-chalk_index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link href="/icc/css/style.css" rel="stylesheet">
+    <script src="/icc/js/extLibs/vue.js"></script>
+    <script src="/icc/js/extLibs/vuex.js"></script>
+    <script src="/icc/js/extLibs/element-ui_lib_index.js"></script>
+    <script src="/icc/js/extLibs/sweetalert2@9.js"></script>
+    <link rel="stylesheet" href="/icc/js/extLibs/maxcdn.bootstrapcdn.com_font-awesome_4.4.0_css_font-awesome.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="/icc/js/extLibs/element-ui_lib_umd_locale_ua.js"></script>
+    <script>
+        ELEMENT.locale(ELEMENT.lang.ua)
+    </script>
 </head>
     <body>
+        <script src="/icc/js/components/icc-header.js"></script>
+        <script src="/icc/js/components/grid-table.js"></script>
+        <script src="/icc/js/components/modal-window.js"></script>
+        <script src="/icc/js/components/ToolBox.js"></script>
+        <script src="/icc/js/components/un-button.js"></script>
+        <script src="/icc/js/components/SearchField.js"></script>
+        <script src="/icc/js/http/FetchUtility.js"></script>
+        <script src="/icc/js/common/ElementOptionsHelper.js"></script>
         <div id="app">
+            <icc-header></icc-header>
             <div class="main-container">
-                <div class="row-container">
-                    <div class="cell-container">
-                        <p class="cell-text">Start date</p>
-                        <label>
-                            <input v-model="startDate" type="date">
-                        </label>
-                        <p class="cell-text">End date</p>
-                        <label>
-                            <input v-model="endDate" type="date">
-                        </label>
-    <!--                <br/>-->
-                        <button class="standard-button" onclick="addNewWriteOffAct()">Add write off act from {{ startDate }} to {{ endDate }}</button>
-
+                <div class="content-container">
+                    <modal :visible.sync="showNewEntryModal">
+                        <h3 slot="header">
+                            Додавання нового акту списання
+                        </h3>
+                        <div slot="body">
+                            <label class="label-box">Початкова дата: <input class="input-box" v-model="startDate" type="date"></label>
+                            <label class="label-box">Кінцева дата: <input class="input-box" v-model="endDate" type="date"></label>
+                            <label class="label-box">Працівник:
+                                <el-select v-model="responsiblePerson" filterable placeholder="Працівник">
+                                    <el-option
+                                            v-for="item in employeesOptions"
+                                            :key="item.value"
+                                            :label="item.label"
+                                            :value="item.value">
+                                    </el-option>
+                                </el-select>
+                            </label>
+                        </div>
+                        <template slot="footer">
+                            <un-button @click="showNewEntryModal = false" type="cancel">Скасувати</un-button>
+                            <un-button @click="addNewWriteOffAct()">Додати</un-button>
+                        </template>
+                    </modal>
+<!--                    <modal v-if="showEditEntryModal" @close="showEditEntryModal = false" @execute="editWriteOffAct()">-->
+                    <modal :visible.sync="showEditEntryModal">
+                        <h3 slot="header">
+                            Редагування акту списання (ID: {{ activeId }})
+                        </h3>
+                        <div slot="body">
+                            <label class="label-box">Початкова дата: <input class="input-box" v-model="startDate" type="date"></label>
+                            <label class="label-box">Кінцева дата: <input class="input-box" v-model="endDate" type="date"></label>
+                            <label class="label-box">Працівник:
+                                <el-select v-model="responsiblePerson" filterable placeholder="Працівник">
+                                    <el-option
+                                            v-for="item in employeesOptions"
+                                            :key="item.value"
+                                            :label="item.label"
+                                            :value="item.value">
+                                    </el-option>
+                                </el-select>
+                            </label>
+                        </div>
+                        <template slot="footer">
+                            <un-button @click="showEditEntryModal = false" type="cancel">Скасувати</un-button>
+                            <un-button @click="updateWriteOffAct()">Оновити</un-button>
+                        </template>
+                    </modal>
+<!--                    <modal v-if="showDeleteEntryModal" @close="showDeleteEntryModal = false" @execute="deleteWriteOffAct()">-->
+                    <modal :visible.sync="showDeleteEntryModal">
+                        <h3 slot="header">
+                            Видалення акту списання (ID: {{ activeId }})
+                        </h3>
+                        <h3 slot="body">
+                            Ви впевнені?
+                        </h3>
+                        <template slot="footer">
+                            <un-button @click="showDeleteEntryModal = false" type="cancel">Скасувати</un-button>
+                            <un-button @click="deleteWriteOffAct()">Додати новий предмет</un-button>
+                        </template>
+                    </modal>
+                    <search-field v-model="searchQuery"></search-field>
+                    <hr/>
+                    <div class="modal-window-page-container">
+                        <button @click="openNewEntryModalWindow()" class="usual-actions-button">Додати новий запис</button>
                     </div>
-                    <div class="cell-container">
-                        <p class="cell-text">Getting All Write Off Acts</p>
-                        <button class="standard-button" onclick="getAllWriteOffActs()">Get all write off acts</button>
-                    </div>
+                    <hr/>
+                    <comp-table
+                            :data="data"
+                            :filter-key="searchQuery">
+                        <template slot="table-columns">
+                            <pb-table-header-column label="Id" property="id"></pb-table-header-column>
+                            <pb-table-header-column label="Дата початку" property="startDate"></pb-table-header-column>
+                            <pb-table-header-column label="Дата кінця" property="endDate"></pb-table-header-column>
+                            <pb-table-header-column label="Матеріально відповідальний" property="responsiblePerson"></pb-table-header-column>
+                        </template>
+                        <template slot="toolbox-header">
+                            <pb-table-header-column width="20px"></pb-table-header-column>
+                            <pb-table-header-column width="20px"></pb-table-header-column>
+                            <pb-table-header-column width="20px"></pb-table-header-column>
+                        </template>
+                        <template slot="toolbox-rows" slot-scope="entry">
+                            <pb-table-column><toolbox @click="openEditEntryModalWindow(entry.entry.id)" material-icon="create"></toolbox></pb-table-column>
+                            <pb-table-column><toolbox @click="openPrintWriteOffActTab(entry.entry.id)" material-icon="print"></toolbox></pb-table-column>
+                            <pb-table-column><toolbox @click="openDeleteEntryModalWindow(entry.entry.id)" material-icon="delete"></toolbox></pb-table-column>
+                        </template>
+                    </comp-table>
                 </div>
-                <div id="pdf-container"></div>
-
-            </div>
 
         </div>
+        </div>
 
-        <script src="js/writeOffAct.js"></script>
+        <script src="/icc/js/writeOffAct.js"></script>
     </body>
 </html>

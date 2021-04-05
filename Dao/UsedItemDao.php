@@ -4,7 +4,7 @@
 namespace Icc\Dao;
 
 
-use Icc\DBConnector;
+use Icc\Database\DBConnector;
 use Icc\Model\IncorrectObjectTypeException;
 use Icc\Model\NotFoundItemException;
 use Icc\Model\UsedItem;
@@ -16,7 +16,7 @@ class UsedItemDao extends AbstractDao implements Dao, ModelConverter
     private $connection;
     public function __construct()
     {
-        $this -> connection = new DBConnector();
+        $this -> connection = DBConnector::getInstance();
     }
 
     /**
@@ -127,5 +127,21 @@ class UsedItemDao extends AbstractDao implements Dao, ModelConverter
         $stringAndClausesBuilder = $this->buildAndClauses($fields, $values, $operators);
         $result = $this -> connection -> execute_query("SELECT * FROM used_item WHERE $stringAndClausesBuilder;");
         return $result -> fetch_all();
+    }
+
+    function convertArrayToModels(array $array): array
+    {
+        $resultArray = array();
+        foreach ($array as $value) {
+            Utils::cleanArrayFromNull($value);
+            array_push($resultArray, new UsedItem($value[0],
+                $value[1],
+                $value[2],
+                $value[3],
+                $value[4],
+                $value[5]));
+        }
+
+        return $resultArray;
     }
 }

@@ -66,7 +66,7 @@ class Utils
 
     public static function number_to_words($number) {
 //        echo $number;
-        $one_digit = array("нуль", "один", "два", "три", "чотири", "п'ять", "шість", "сім", "вісім", "дев'ять");
+        $one_digit = array("нуль", "одна", "дві", "три", "чотири", "п'ять", "шість", "сім", "вісім", "дев'ять");
         $ten_to_twenty_digit = array("десять", "одинадцять", "дванадцять", "тринадцять", "чотирнадцять", "п'ятнадцять", "шістнадцять", "сімнадцять", "дев'ятнадцять");
         $divided_by_ten_until_a_hundred = array("двадцять", "тридцять", "сорок", "п'ятдесят", "шістдесят", "сімдесят", "вісімдесят", "дев'яносто");
         $divided_by_hundred_until_a_thousand = array("сто", "двісті", "триста", "чотириста", "п'ятсот", "шістсот", "сімсот", "вісімсот", "дев'ятсот");
@@ -97,26 +97,36 @@ class Utils
             } else $final_str .= 'Unsupported number';
             }
         }
-        $value = (int) ($number % 1000 / 100);
-        if ($value != 0) {
-            $final_str .= ' ';
-            $final_str .= $divided_by_hundred_until_a_thousand[$value - 1];
-        }
+        if ($number >= 10 && $number <= 19) {
+            $final_str = $ten_to_twenty_digit[$number % 10];
+        } else if ($number == 0) {
+            $final_str = $one_digit[0];
+        } else {
+            $value = (int)($number % 1000 / 100);
+            if ($value != 0) {
+                $final_str .= ' ';
+                $final_str .= $divided_by_hundred_until_a_thousand[$value - 1];
+            }
 //        $final_str .= ' ';
-        $value = (int)($number / 10 % 10);
-        if ($value != 0) {
-            $final_str .= ' ';
-            $final_str .= $divided_by_ten_until_a_hundred[$value - 2];
-        }
+            $value = (int)($number / 10 % 10);
+            if ($value != 0) {
+                $final_str .= ' ';
+                if ($value > 1)
+                    $final_str .= $divided_by_ten_until_a_hundred[$value - 2];
+                else
+                    $final_str .= $divided_by_ten_until_a_hundred[$value - 1];
+            }
 //        $final_str .= ' ';
-        $value = (int) ($number % 10);
-        if ($value != 0) {
-            $final_str .= ' ';
-            $final_str .= $one_digit[$value];
-        }
+            $value = (int)($number % 10);
+            if ($value != 0) {
+                $final_str .= ' ';
+                $final_str .= $one_digit[$value];
+            }
+
 //        echo $final_str;
-        if ($final_str[0] == ' ') ltrim($final_str, $final_str[0]); //Actually ltrim is a really freaky thing, but I didn't find any appropriate function. Maybe I'll write something like that and I'll inform about it.
-        if ($final_str[strlen($final_str) - 1] == ' ') $final_str[strlen($final_str) - 1] = '';
+            if (strlen($final_str) >= 1 && $final_str[0] == ' ') $final_str = ltrim($final_str, $final_str[0]); //Actually ltrim is a really freaky thing, but I didn't find any appropriate function. Maybe I'll write something like that and I'll inform about it.
+            if (strlen($final_str) - 1 >= 0 && $final_str[strlen($final_str) - 1] == ' ') $final_str[strlen($final_str) - 1] = '';
+        }
         return $final_str;
     }
 
@@ -147,14 +157,15 @@ class Utils
     }
 
     /**
-     * Replace all null value in its string representation.
+     * Replace all null value on {@link $replaceOn}.
      *
      * @param array $array
+     * @param string $replaceOn
      */
-    public static function cleanArrayFromNull(array &$array) {
+    public static function cleanArrayFromNull(array &$array, $replaceOn = 'NULL') {
         foreach ($array as &$value) {
-            if ($value === null) {
-                $value = "NULL";
+            if ($value === null || strtolower($value) === 'null') {
+                $value = $replaceOn;
             }
         }
     }

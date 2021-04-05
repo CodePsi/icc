@@ -1,21 +1,19 @@
 <?php
 
 namespace Icc\Dao;
-use Icc\DBConnector;
+use Icc\Database\DBConnector;
 use Icc\Model\IncorrectObjectTypeException;
 use Icc\Model\NotFoundItemException;
 use Icc\Utils\Utils;
 use mysqli_result;
 use \Icc\Model\StockItem;
 
-require __DIR__ . "/../../vendor/autoload.php";
-
-class StockItemDao implements Dao, ModelConverter
+class StockItemDao extends AbstractDao implements Dao, ModelConverter
 {
     private $connection;
     public function __construct()
     {
-        $this -> connection = new DBConnector();
+        $this -> connection = DBConnector::getInstance();
     }
 
     /**
@@ -45,9 +43,10 @@ class StockItemDao implements Dao, ModelConverter
     function save(object $object): int
     {
         if ($object instanceof StockItem) {
-            $formatString = sprintf("INSERT INTO stock_item (id, item_name, type, amount, price, total, responsible_person_employee_id, code) VALUES (DEFAULT, '%s', '%s', '%s', '%s', '%s', '%s', '%s');",
+            $formatString = sprintf("INSERT INTO stock_item (id, item_name, type, unit, amount, price, total, responsible_person_employee_id, code) VALUES (DEFAULT, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');",
             $object -> getItemName(),
             $object -> getType(),
+            $object -> getUnit(),
             $object -> getAmount(),
             $object -> getPrice(),
             $object -> getTotal(),
@@ -77,7 +76,6 @@ class StockItemDao implements Dao, ModelConverter
     /**
      * @param object $object
      * @return bool
-     * @throws IncorrectObjectTypeException
      */
     function update(object $object): bool
     {
@@ -85,17 +83,18 @@ class StockItemDao implements Dao, ModelConverter
             $formatString = sprintf("UPDATE stock_item SET 
                       item_name='%s',
                       type='%s',
+                      unit='%s',
                       amount=%s,
                       price=%s,
                       total=%s,
                       responsible_person_employee_id=%s,
                       code='%s' WHERE id=%d",
-                $object -> getItemName(), $object -> getType(), $object -> getAmount(), $object -> getPrice(),
+                $object -> getItemName(), $object -> getType(), $object -> getUnit(), $object -> getAmount(), $object -> getPrice(),
                 $object -> getTotal(), $object -> getResponsiblePerson(), $object -> getCode(), $object -> getId());
             return $this->connection->execute_query($formatString);
         }
 
-        throw new IncorrectObjectTypeException("Passed object's type is not StockItem");
+        return false;
     }
 
     /**
@@ -125,11 +124,33 @@ class StockItemDao implements Dao, ModelConverter
             $fetchedRow[4],
             $fetchedRow[5],
             $fetchedRow[6],
-            $fetchedRow[7]);
+            $fetchedRow[7],
+            $fetchedRow[8]);
     }
 
     function where(array $fields, array $values, array $operators): array
     {
-        // TODO: Implement where() method.
+        $stringAndClausesBuilder = $this->buildAndClauses($fields, $values, $operators);
+        $result = $this -> connection -> execute_query("SELECT * FROM stock_item WHERE $stringAndClausesBuilder;");
+        return $result -> fetch_all();
+    }
+
+    function convertArrayToModels(array $array): array
+    {
+        $resultArray = array();
+        foreach ($array as $value) {
+            Utils::cleanArrayFromNull($value);
+            array_push($resultArray, new StockItem($value[0],
+                $value[1],
+                $value[2],
+                $value[3],
+                $value[4],
+                $value[5],
+                $value[6],
+                $value[7],
+                $value[8]));
+        }
+
+        return $resultArray;
     }
 }

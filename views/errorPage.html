@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Error</title>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="js/HttpRequest.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body onload="init()">
+    <div id="app">
+        <div style="display: flex; align-items: center; flex-flow: column wrap;">
+            <h1>Response Code: {{responseCode}}</h1>
+            <p>{{message}}</p>
+        </div>
+    </div>
+    <script src="js/errorPage.js"></script>
+</body>
+</html>

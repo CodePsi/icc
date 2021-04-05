@@ -11,3 +11,20 @@
 //
 //
 // }
+
+var app = new Vue({
+    el: '#app',
+    data: {
+        responseCode: '',
+        message: ''
+    },
+    created: function () {
+
+    }
+});
+
+function init() {
+    var url = decodeURIComponent(location.search).split('&');
+    app.message = url[0].split('=')[1];
+    app.responseCode = url[1].split('=')[1];
+}

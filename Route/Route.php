@@ -4,107 +4,137 @@ namespace Icc\Route;
 use Closure;
 //use Icc\ControllerBind;
 //use Icc\Render;
-use Icc\ControllerManager\ControllerBind;
-use Icc\Render\Render;
+//use Icc\ControllerManager\ControllerBind;
+//use Icc\Secure\AuthorizationMiddleware;
+//use Icc\Secure\JWTSecurity;
 
 require __DIR__ . "/../../vendor/autoload.php";
 
-//include_once __DIR__ . "\..\Render\Render.php";
-//include_once __DIR__ . "\..\ControllerManager\Controller.php";
-//include_once __DIR__ . "\..\ControllerManager\ControllerBind.php";
 
 class Route
 {
-    private static $routes = array();
+    public static $routes = array();
 
-    private static $getRequests = array();
-    private static $postRequests = array();
-    private static $putRequests = array();
-    private static $patchRequests = array();
+    private $uri;
+    private $regexUri;
+
+    private $method;
+
+
+    public $parameters = [];
+    public $parameterNames = [];
+
+    private $action;
+    private $controller = [];
+
+    private $router;
 
     /**
      * Route constructor.
+     * @param string $method
+     * @param string $uri
+     * @param Closure $action
      */
-    private function __construct()
+    public function __construct($method, $uri, $action)
     {
-
+        $this->method = $method;
+        $this->uri = $uri;
+        $this->action = $action;
     }
 
-    protected function __clone()
+
+    /**
+     * @return mixed
+     */
+    public function getRouter()
     {
-        // TODO: Implement __clone() method.
+        return $this->router;
     }
 
     /**
-     * Append a new or replace old route to the callback function.
-     *
-     * @param $url
-     * @param Closure $function
+     * @param mixed $router
      */
-    public static function setRoute($url, Closure $function) {
-        //TODO Passing class (controller) instead of a function and further working with controller's methods.
-        self::$routes[$url] = $function;
-    }
-
-    public static function get(string $url, Closure $callback) {
-        self::$getRequests[$url] = $callback;
-    }
-
-    public static function post(string $url, Closure $callback) {
-        self::$postRequests[$url] = $callback;
-    }
-
-    public static function put(string $url, Closure $callback) {
-        self::$putRequests[$url] = $callback;
-    }
-
-    public static function patch(string $url, Closure $callback) {
-        self::$patchRequests[$url] = $callback;
-    }
-
-
-    /**
-     * Check if passed url (route) is existed.
-     *
-     * @param $url string
-     * @param $array array
-     * @return bool
-     */
-    private static function has(string $url, array $array) {
-        return array_key_exists($url, $array);
+    public function setRouter($router): void
+    {
+        $this->router = $router;
     }
 
     /**
-     * Render and run passed url.
-     *
-     * @param $url
+     * @return string
      */
-    public static function runPath($url) {
-        $urlSplit = explode('?', $url);
-        $args = $urlSplit[1]; //Checking for ending. TODO refactor it for url like something/bla/{id} and passing ID somehow
-        $url = $urlSplit[0];
-        if (self::has($url, self::$routes)) {
-            Render::render(self::$routes[$url] -> call(new Route()));
-        } else if (self::has($url, self::$postRequests)) {
-            if ($_SERVER['REQUEST_METHOD'] === "POST") {
-                Render::render(self::$postRequests[$url] -> call(new Route()));
-            }
-        } else if (self::has($url, self::$getRequests)) {
-            if ($_SERVER['REQUEST_METHOD'] === "GET") {
-                Render::render(self::$getRequests[$url] -> call(new Route()));
-            }
-        } else if (self::has($url, self::$putRequests)) {
-            if ($_SERVER['REQUEST_METHOD'] === "PUT") {
-                Render::render(self::$putRequests[$url] -> call(new Route()));
-            }
-        } else if (self::has($url, self::$patchRequests)) {
-            if ($_SERVER['REQUEST_METHOD'] === "PATCH") {
-                Render::render(self::$patchRequests[$url]->call(new Route()));
-            }
-        } else {
-            self::$routes["errorPage"] -> call(new Route());
-        }
+    public function getUri(): string
+    {
+        return $this->uri;
     }
+
+    /**
+     * @return string
+     */
+    public function getMethod(): string
+    {
+        return $this->method;
+    }
+
+    /**
+     * @return array
+     */
+    public function getParameters(): array
+    {
+        return $this->parameters;
+    }
+
+    /**
+     * @return array
+     */
+    public function getParameterNames(): array
+    {
+        return $this->parameterNames;
+    }
+
+    /**
+     * @return Closure
+     */
+    public function getAction(): Closure
+    {
+        return $this->action;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getRegexUri()
+    {
+        return $this->regexUri;
+    }
+
+    /**
+     * @param mixed $regexUri
+     */
+    public function setRegexUri($regexUri): void
+    {
+        $this->regexUri = $regexUri;
+    }
+
+    /**
+     * @return array
+     */
+    public function getController(): array
+    {
+        return $this->controller;
+    }
+
+    /**
+     * @param mixed $controller
+     */
+    public function setController(array $controller): void
+    {
+        $this->controller = $controller;
+    }
+
+    public function call() {
+        return $this->getAction()->call($this, ...$this->getParameters());
+    }
+
 
 
 }

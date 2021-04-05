@@ -1,0 +1,161 @@
+<!--<?php-->
+<!--include "EmployeeController.php";-->
+<!--$ec = new EmployeeController();-->
+<!--$data = $ec -> getEmployeesAsTable();-->
+<!--?>-->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ICC - Employees</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link href="/icc/css/style.css" rel="stylesheet">
+    <script src="/icc/js/extLibs/vue.js"></script>
+    <script src="/icc/js/extLibs/vuex.js"></script>
+    <script src="/icc/js/extLibs/element-ui_lib_index.js"></script>
+    <script src="/icc/js/extLibs/sweetalert2@9.js"></script>
+    <link rel="stylesheet" href="/icc/js/extLibs/maxcdn.bootstrapcdn.com_font-awesome_4.4.0_css_font-awesome.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="/icc/js/extLibs/element-ui_lib_umd_locale_ua.js"></script>
+    <script>
+        ELEMENT.locale(ELEMENT.lang.ua)
+    </script>
+</head>
+    <body>
+    <script src="/icc/js/components/icc-header.js"></script>
+    <script src="/icc/js/components/grid-table.js"></script>
+    <script src="/icc/js/components/modal-window.js"></script>
+    <script src="/icc/js/components/ToolBox.js"></script>
+    <script src="/icc/js/components/un-button.js"></script>
+    <script src="/icc/js/components/SearchField.js"></script>
+    <script src="/icc/js/http/FetchUtility.js"></script>
+    <div id="app">
+        <icc-header></icc-header>
+        <div class="main-container">
+            <div class="content-container">
+<!--                <modal v-if="showNewEntryModal" @close="showNewEntryModal = false" @execute="addNewEmployee()">-->
+                <modal :visible.sync="showNewEntryModal">
+                    <h3 slot="header">
+                        Додавання нового працівника
+                    </h3>
+                    <div slot="body">
+                        <label class="label-box">Прізвище: <input class="input-box" v-model="surname" type="text" required="required" placeholder="Прізвище"></label>
+                        <label class="label-box">Ім'я: <input class="input-box" v-model="name" type="text" required="required" placeholder="Ім\'я" autofocus="autofocus"></label>
+                        <label class="label-box">По-батькові: <input class="input-box" v-model="patronymic" type="text" required="required" placeholder="По-батькові"></label>
+                        <label class="label-box">Статус:
+                            <el-select v-model="status" filterable placeholder="Статус">
+                                <el-option
+                                        v-for="item in employeesStatusOptions"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                </el-option>
+                            </el-select>
+                        </label>
+                        <label class="label-box">Контактний номер: <input class="input-box" v-model="contactNumber" type="text" required="required" placeholder="Контактний номер"></label>
+                        <label class="label-box">Посада: <input class="input-box" v-model="position" type="text" required="required" placeholder="Посада"></label>
+<!--                            <label class="label-box">Матеріально відповідальний: <input class="input-box" v-model="responsible" type="text" required="required" placeholder="Материально ответственный"></label>-->
+                        <label class="label-box">Матеріально відпвідальний:
+                            <el-select v-model="responsible" filterable placeholder="Статус">
+                                <el-option
+                                        v-for="item in responsibleOptions"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                </el-option>
+                            </el-select>
+                        </label>
+
+                    </div>
+                    <template slot="footer">
+                        <un-button @click="showNewEntryModal = false" type="cancel">Скасувати</un-button>
+                        <un-button @click="addNewEmployee()">Додати робітника</un-button>
+                    </template>
+                </modal>
+<!--                <modal v-if="showEditEntryModal" @close="showEditEntryModal = false" @execute="editEmployee()">-->
+                <modal :visible.sync="showEditEntryModal">
+                    <h3 slot="header">
+                        Редагувати запис (ID: {{ activeId }})
+                    </h3>
+                    <div slot="body">
+                        <label class="label-box">Прізвище: <input class="input-box" v-model="surname" type="text" required="required" placeholder="Surname"></label>
+                        <label class="label-box">Ім'я: <input class="input-box" v-model="name" type="text" required="required" placeholder="Name" autofocus="autofocus"></label>
+                        <label class="label-box">По-батькові: <input class="input-box" v-model="patronymic" type="text" required="required" placeholder="Patronymic"></label>
+                        <label class="label-box">Статус:
+                            <el-select v-model="status" filterable placeholder="Статус">
+                                <el-option
+                                        v-for="item in employeesStatusOptions"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                </el-option>
+                        </el-select>
+                        </label>
+                        <label class="label-box">Контактний номер: <input class="input-box" v-model="contactNumber" type="text" required="required" placeholder="Contact Number"></label>
+                        <label class="label-box">Посада: <input class="input-box" v-model="position" type="text" required="required" placeholder="Position"></label>
+<!--                            <label class="label-box">Матеріально відповідальний: <input class="input-box" v-model="responsible" type="text" required="required" placeholder="Материально ответственный"></label>-->
+                        <label class="label-box">Матеріально відпвідальний:
+                            <el-select v-model="responsible" filterable placeholder="Статус">
+                                <el-option
+                                        v-for="item in responsibleOptions"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                </el-option>
+                            </el-select>
+                        </label>
+                    </div>
+                    <template slot="footer">
+                        <un-button @click="showEditEntryModal = false" type="cancel">Скасувати</un-button>
+                        <un-button @click="updateEmployee()">Оновити робітника</un-button>
+                    </template>
+                </modal>
+<!--                <modal v-if="showDeleteEntryModal" @close="showDeleteEntryModal = false" @execute="deleteEmployee()">-->
+                <modal :visible.sync="showDeleteEntryModal">
+                    <h3 slot="header">
+                        Видалення працівника (ID: {{ activeId }})
+                    </h3>
+                    <h3 slot="body">
+                        Ви впевнені?
+                    </h3>
+                    <template slot="footer">
+                        <un-button @click="showDeleteEntryModal = false" type="cancel">Скасувати</un-button>
+                        <un-button @click="deleteEmployee()">Видалити робітника</un-button>
+                    </template>
+                </modal>
+                <search-field v-model="searchQuery"></search-field>
+                <hr/>
+                <div class="modal-window-page-container">
+                    <button @click="showNewEntryModalWindow()" class="usual-actions-button">Додати нового працівника</button>
+                </div>
+                <hr/>
+                <comp-table
+                        :data="data"
+                        :filter-key="searchQuery">
+                    <template slot="table-columns">
+                        <pb-table-header-column label="Id" property="id"></pb-table-header-column>
+                        <pb-table-header-column label="Прізвище" property="surname"></pb-table-header-column>
+                        <pb-table-header-column label="Ім'я" property="name"></pb-table-header-column>
+                        <pb-table-header-column label="По-батькові" property="patronymic"></pb-table-header-column>
+                        <pb-table-header-column label="Статус Знаходження" property="status"></pb-table-header-column>
+                        <pb-table-header-column label="Контактний Номер" property="contactNumber"></pb-table-header-column>
+                        <pb-table-header-column label="Посада" property="position"></pb-table-header-column>
+                        <pb-table-header-column label="Матеріально-відповідальний" property="responsible"></pb-table-header-column>
+                    </template>
+                    <template slot="toolbox-header">
+                        <pb-table-header-column width="20px"></pb-table-header-column>
+                        <pb-table-header-column width="20px"></pb-table-header-column>
+                    </template>
+                    <template slot="toolbox-rows" slot-scope="entry">
+                        <pb-table-column><toolbox @click="openEditEntryModal(entry.entry.id)" material-icon="create"></toolbox></pb-table-column>
+                        <pb-table-column><toolbox @click="openDeleteEntryModal(entry.entry.id)" material-icon="delete"></toolbox></pb-table-column>
+                    </template>
+                </comp-table>
+
+            </div>
+        </div>
+    </div>
+    <script src="/icc/js/employee.js"></script>
+
+    </body>
+</html>

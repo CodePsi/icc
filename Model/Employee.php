@@ -4,7 +4,7 @@
 namespace Icc\Model;
 
 
-class Employee
+class Employee implements \JsonSerializable
 {
     private $id;
     private $name;
@@ -167,5 +167,15 @@ class Employee
         $this->responsible = $responsible;
     }
 
+    public function toJson(): string {
+        return json_encode(array('id' => intval($this -> getId()), 'name' => $this -> getName(), 'surname' => $this -> getSurname(), 'patronymic' => $this -> getPatronymic(),
+            'status' => $this -> getStatus(), 'contactNumber' => $this -> getContactNumber(), 'position' => $this -> getPosition(), 'responsible' => $this -> getResponsible()), JSON_FORCE_OBJECT);
+    }
 
+
+    public function jsonSerialize(): array
+    {
+        return array('id' => intval($this -> getId()), 'name' => $this -> getName(), 'surname' => $this -> getSurname(), 'patronymic' => $this -> getPatronymic(),
+            'status' => $this -> getStatus(), 'contactNumber' => $this -> getContactNumber(), 'position' => $this -> getPosition(), 'responsible' => intval($this -> getResponsible()));
+    }
 }

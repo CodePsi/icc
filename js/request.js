@@ -1,103 +1,4 @@
-// register modal component
-Vue.component('modal', {
-    template: '#modal-template',
-    props: {
-        width: String
-    },
-    methods: {
-        getActiveID: function() {
-            return app.activeModalValue
-        }
-    }
-});
-
-var componentGrid = Vue.component('grid', {
-    template: '#grid-template',
-    props: {
-        heroes: Array,
-        columns: Array,
-        filterKey: String
-    },
-    data: function () {
-        var sortOrders = {};
-        this.columns.forEach(function (key) {
-            sortOrders[key] = 1
-        });
-        console.log('TEST:' + this.columns);
-        return {
-            sortKey: '',
-            sortOrders: sortOrders,
-            hers: this.heroes
-        }
-    },
-    computed: {
-        filteredHeroes: function () {
-            var sortKey = this.sortKey;
-            var filterKey = this.filterKey && this.filterKey.toLowerCase();
-            var order = this.sortOrders[sortKey] || 1;
-            var heroes = this.heroes;
-            if (filterKey) {
-                heroes = heroes.filter(function (row) {
-                    return Object.keys(row).some(function (key) {
-                        return String(row[key]).toLowerCase().indexOf(filterKey) > -1;
-                    })
-                })
-            }
-            if (sortKey) {
-                heroes = heroes.slice().sort(function (a, b) {
-                    a = a[sortKey];
-                    b = b[sortKey];
-                    return (a === b ? 0 : a > b ? 1 : -1) * order;
-                })
-            }
-            return heroes
-        }
-    },
-    filters: {
-        capitalize: function (str) {
-            return str.charAt(0).toUpperCase() + str.slice(1);
-        }
-    },
-    methods: {
-        sortBy: function (key) {
-            this.sortKey = key;
-            this.sortOrders[key] = this.sortOrders[key] * -1;
-        },
-        displayCloseRequestModalWindow: function (value) {
-            app.activeModalValue = value;
-            app.showCloseEntryModal = true;
-            app.updateAllStockItemsEntries();
-            app.usedItems = [];
-            app.inventoryNumbers = [];
-        },
-        displayEditRequestModalWindow: function (value) {
-            app.activeModalValue = value;
-            app.showEditEntryModal = true;
-            var request = new HttpRequest();
-            request.xmlHttpRequestInstance.onreadystatechange = function (ev) {
-                if (request.isRequestSuccessful()) {
-                    var requestInstance = JSON.parse(request.xmlHttpRequestInstance.responseText);
-                    app.employee = requestInstance['employeeId'];
-                    app.building = requestInstance['building'];
-                    app.auditorium = requestInstance['auditorium'];
-                    app.cause = requestInstance['reason'];
-                    app.status = requestInstance['status'];
-                    var tempDate = requestInstance['date'].split(' ');
-                    app.date = tempDate[0] + 'T' + tempDate[1];
-                }
-            };
-
-            request.sendGETRequest('/icc/requests/getRequest?id=' + value, '');
-        },
-        printRequest: function (value) {
-            window.open('requestPdf?id=' + value, '_blank');
-        }
-    }
-});
-
-
-// start app
-var app = new Vue({
+let app = new Vue({
     el: '#app',
     data: {
         showModal: false,
@@ -105,380 +6,346 @@ var app = new Vue({
         showPrintModal: false,
         showEditEntryModal: false,
         showCloseEntryModal: false,
+        showDeleteEntryModal: false,
         activeModalValue: -1,
         searchQuery: '',
-        gridColumns: ['id', 'employee Id', 'building', 'auditorium', 'reason', 'date', 'status'],
-        gridData: [],
+        data: [],
         employees: [],
-        date: getNow(),
+        date: '',
         employee: '',
-        building: 'Main',
+        building: '',
         auditorium: '',
-        cause: '',
+        reason: '',
         status: '',
         textBoxes: [],
         selects: [],
         usedItems: [],
+        activeId: -1,
+        currentCloseRequestId: -1,
+        previousCloseRequestId: -1,
         inventoryNumbers: [],
-        stockItemEntries: []
+        stockItems: [],
+        usedItemsModels: [],
+        model: '',
+        technicalTicketNeeded: 'Ні',
+        employeeOptions: [],
+        stockItemsOptions: [],
+        buildingOptions: [
+            {
+                label: "Корпуси",
+                options: [
+                    {
+                        value: 'Головний',
+                        label: 'Головний'
+                    },
+                    {
+                        value: 'Гуманітарний',
+                        label: 'Гуманітарний'
+                    },
+                    {
+                        value: 'ДТО',
+                        label: 'ДТО'
+                    },
+                    {
+                        value: 'Худ. граф.',
+                        label: 'Худ. граф.'
+                    },
+                    {
+                        value: 'Муз. пед.',
+                        label: 'Муз. пед.'
+                    }],
+            },
+            {
+                label: "Гуртожитки",
+                options: [
+                    {
+                        value: 'Гуртожиток #1',
+                        label: 'Гуртожиток #1'
+                    },
+                    {
+                        value: 'Гуртожиток #2',
+                        label: 'Гуртожиток #2'
+                    },
+                    {
+                        value: 'Гуртожиток #3',
+                        label: 'Гуртожиток #3'
+                    },
+                    {
+                        value: 'Гуртожиток #4',
+                        label: 'Гуртожиток #4'
+                    }]
+            },
+            {
+                label: 'Інші будівлі',
+                options: [
+                    {
+                        value: 'Віварій',
+                        label: 'Віварій'
+                    },
+                    {
+                        value: 'Майстерня',
+                        label: 'Майстерня'
+                    }]
+            }],
+        technicalTicketOptions: [
+            {
+                value: 'Так',
+                label: true
+            },
+            {
+                value: 'Ні',
+                label: false
+            },
+        ]
     },
     computed: {
-        chief: function () {
-            this.getAllEmployees(); //For updating app.employees variable
-
-            for (var i = 0; i < app.employees.length; i++) {
-                if (app.employees[i]['status'] === 'Chief') {
+        chief () {
+            // await this.loadAllEmployees(); //For updating app.employees variable
+            for (let i = 0; i < this.employees.length; i++) {
+                if (this.employees[i]['status'] === 'Начальник') {
                     return app.employees[i]['name'] + ' ' + app.employees[i]['surname'];
                 }
             }
 
             return 'None';
+        },
+        requestCompletion: function (status) {
+            return {
+                'unfinished-request': status === 'Відкрита'
+            }
         }
 
     },
+    async mounted() {
+        await this.loadAllRequests();
+        this.date = this.getNow();
+    },
     methods: {
-        getAllEmployees: function () {
-            var request = new HttpRequest();
-            request.xmlHttpRequestInstance.onreadystatechange = function (ev) {
-                if (request.isRequestSuccessful()) {
-                    var jsonData = JSON.parse(request.xmlHttpRequestInstance.responseText);
-                    for (var i = 0; i < jsonData.length; i++) {
-                        console.log(i + ';' + jsonData[i][0]);
-                        app.employees[i] = {
-                            'id': jsonData[i][0],
-                            'name': jsonData[i][1],
-                            'surname': jsonData[i][2],
-                            'patronymic': jsonData[i][3],
-                            'status': jsonData[i][4],
-                            'contactNumber': jsonData[i][5],
-                            'position': jsonData[i][6],
-                            'responsible': jsonData[i][7]
-                        };
-                    }
+        async loadAllRequests() {
+            await this.loadAllEmployees();
+            let response = await fetch('/icc/requests/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8'
                 }
-            };
-            request.sendPOSTRequest("/icc/employee/getAllEmployees", "");
-        },
-        updateAllStockItemsEntries: function() {
-            var request = new HttpRequest();
-            request.xmlHttpRequestInstance.onreadystatechange = function (ev) {
-                if (request.isRequestSuccessful()) {
-                    var stockItemsJSON = JSON.parse(request.xmlHttpRequestInstance.responseText);
-                    for (var i = 0; i < stockItemsJSON.length; i++) {
-                        app.stockItemEntries[i] = {
-                            'id': stockItemsJSON[i][0],
-                            'itemName': stockItemsJSON[i][1],
-                            'type': stockItemsJSON[i][2],
-                            'amount': stockItemsJSON[i][3],
-                            'price': stockItemsJSON[i][4],
-                            'total': stockItemsJSON[i][5],
-                            'responsiblePerson': stockItemsJSON[i][6],
-                            'code': stockItemsJSON[i][7]
-                        };
-                    }
-                }
-            };
-            request.sendGETRequest("/icc/stock/getAllStockItems", "");
-        },
-        closeNewEntryModalWindow: function () {
-            console.log(this.date + ' ' + this.employee + ' ' + this.building + ' ' + this.auditorium + ' ' + this.cause + ' ' + this.chief);
-            this.showNewEntryModal = false;
-            var request = new HttpRequest();
-            request.xmlHttpRequestInstance.onreadystatechange = function (ev) {
-                if (request.isRequestSuccessful()) {
-                    console.log('Status: ' + request.xmlHttpRequestInstance.responseText);
-                    getAllRequests();
-                }
-            };
+            });
+            let result = await response.json();
+            result.forEach((value) => {
+                if (value.status)
+                    value.status = 'Закрита';
+                else
+                    value.status = 'Відкрита';
 
-            request.sendPOSTRequest("/icc/requests/addRequest", JSON.stringify({'date': this.date, 'employee': this.employee, 'building': this.building, 'auditorium': this.auditorium, 'cause': this.cause, 'status': 0}));
-        },
-        openNewEntryRequestWindow: function() {
-            this.date = getNow();
+                let employeeData = app.employees.filter((employee) => { return employee.id === parseInt(value.employeeId) })[0];
+                let employee = '';
+                if (employeeData !== undefined) {
+                    employee = employeeData.surname + ' ' + employeeData.name + ' ' + employeeData.patronymic;
+                }
 
+                value.employee = employee;
+            });
+            this.data = result;
+        },
+        async loadAllEmployees() {
+            let response = await fetch('/icc/employees/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8'
+                }
+            });
+
+            this.employees = await response.json();
+            this.convertEmployeeToSelectOptionsData();
+        },
+        async openEditEntryModal(entry) {
+            let response = await fetch('/icc/requests/' + entry.id, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8'
+                }
+            });
+
+            let result = await response.json();
+            this.showEditEntryModal = true;
+            this.activeId = entry.id;
+            this.employee = result.employeeId;
+            this.building = result.building;
+            this.auditorium = result.auditorium;
+            this.reason = result.reason;
+            this.status = result.status;
+            this.date = result.date.replace(' ', 'T');
+            this.technicalTicketNeeded = result.technicalTicketNeeded;
+        },
+        async openCloseRequestModal(entryId) {
+            this.showCloseEntryModal = true;
+            this.activeId = entryId;
+            if (this.activeId !== this.previousCloseRequestId) {
+                this.usedItemsModels = [];
+                this.usedItems = [];
+            }
+            await this.loadStockItems();
+        },
+        async loadStockItems() {
+            let response = await fetch('/icc/stock/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8'
+                }
+            });
+            this.stockItems = await response.json();
+            this.convertStockItemsToSelectOptionsData();
+        },
+        async addNewRequest() {
+            const content = {
+                'date': this.date,
+                'employee': this.employee,
+                'building': this.building,
+                'auditorium': this.auditorium,
+                'reason': this.reason,
+                'status': false,
+                'technicalTicketNeeded': this.technicalTicketNeeded
+            };
+            let response = await fetchPost('/icc/requests/', content)
+            if (response.status === 200) {
+                this.showNewEntryModal = false;
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Заявка успішно додано',
+                    showConfirmButton: false,
+                    timer: 1500
+                })
+            }
+
+            await app.loadAllRequests();
+
+        },
+        onRequestWindowCloses() {
+            this.previousCloseRequestId = this.activeId;
+        },
+        convertEmployeeToSelectOptionsData() {
+            this.employeeOptions = []
+            this.employees.forEach(value => {
+                let label = value.surname + ' ' + value.name + ' ' + value.patronymic;
+                let employeeId = value.id;
+                this.employeeOptions.push({
+                    value: employeeId,
+                    label: label
+                })
+            });
+        },
+        convertStockItemsToSelectOptionsData() {
+            this.stockItemsOptions = []
+            this.stockItems.forEach(value => {
+                let label = value.itemName;
+                let itemId = value.id;
+                this.stockItemsOptions.push({
+                    value: itemId,
+                    label: label
+                });
+
+            });
+        },
+        openNewEntryRequestWindow() {
             this.showNewEntryModal = true;
+            this.employee = '';
+            this.building = '';
+            this.auditorium = '';
+            this.reason = '';
+            this.date = this.getNow();
+            this.technicalTicketNeeded = false;
         },
-        closePrintModalWindow: function () {
-
+        openDeleteRequestModal(entryId) {
+            this.activeId = entryId;
+            this.showDeleteEntryModal = true;
         },
-        updateRequest: function (value) {
-            var request = new HttpRequest();
+        openPrintRequestPage(entryId) {
+            window.open('/icc/requests/view/pdf/' + entryId, '_blank')
+        },
+        cleanUpData() {
+            this.employee = '';
+            this.building = '';
+            this.auditorium = '';
+            this.reason = '';
+            this.status = '';
+            this.date = '';
+        },
+        async updateRequest() {
             this.showEditEntryModal = false;
-            request.xmlHttpRequestInstance.onreadystatechange = function (ev) {
-                if (request.isRequestSuccessful()) {
-                    console.log('Status: ' + request.xmlHttpRequestInstance.responseText);
-
-                    getAllRequests();
-                }
+            let status = this.status;
+            const content = {
+                'date': this.date,
+                'employee': this.employee,
+                'building': this.building,
+                'auditorium': this.auditorium,
+                'reason': this.reason,
+                'status': this.status,
+                'technicalTicketNeeded': this.technicalTicketNeeded
             };
-
-            request.sendPATCHRequest("/icc/requests/updateRequest", JSON.stringify({'id': this.activeModalValue, 'date': this.date, 'employee': this.employee, 'building': this.building, 'auditorium': this.auditorium, 'cause': this.cause, 'status': this.status}));
+            let response = await fetchPut(`/icc/requests/${this.activeId}`, content)
+            console.log(await response.text())
+            Swal.fire({
+                position: 'top-end',
+                icon: 'success',
+                title: 'Запис успішно оновлено',
+                showConfirmButton: false,
+                timer: 1500
+            })
+            await app.loadAllRequests();
         },
-        closeRequest: function() {
-            var request = new HttpRequest();
-            var data = {"usedItems": [], "inventoryNumbers": [], "requestId": this.activeModalValue};
-            console.log(app.inventoryNumbers);
-            for (let i = 0; i < app.inventoryNumbers.length; i++) {
-                data["inventoryNumbers"].push(this.$refs[this.inventoryNumbers[i]['inventoryNumber']][0].value);
+        async closeRequest() {
+            this.showCloseEntryModal = false;
+            const data = {"usedItems": [], "requestId": this.activeId};
+            for (let i = 0; i < this.usedItems.length; i++) {
+                const itemId = this.$refs[this.usedItems[i]['option']][0].value;
+                const countOfElements = this.$refs[this.usedItems[i]['input']][0].value;
+                const inventoryNumber = this.$refs[this.usedItems[i]['inventoryNumber']][0].value;
+                data["usedItems"].push({ 'itemId': itemId, 'count': countOfElements, 'inventoryNumber': inventoryNumber });
             }
-            for (let i = 0; i < app.usedItems.length; i++) {
-                var select = this.$refs[this.usedItems[i]['option']][0].value;
-                var input = this.$refs[this.usedItems[i]['input']][0].value;
-                data["usedItems"].push({ 'select': select, 'input': input });
-            }
+            await fetchPost(`/icc/requests/close/${this.activeId}`, data);
 
-            request.xmlHttpRequestInstance.onreadystatechange = function (ev) {
-                if (request.isRequestSuccessful()) {
-                    console.log(request.xmlHttpRequestInstance.responseText);
-                }
-            };
+            await this.loadAllRequests();
 
-            request.sendPOSTRequest("/icc/requests/closeRequest", JSON.stringify(data));
-            // console.log(data);
-
-        },
-        test123: function() {
-            this.gridData.push({id: '', 'employee Id': '', building: '',
-                auditorium: '', reason: '', date: '',
-                status: ''});
         },
         addInputBox: function () {
-            this.usedItems.push({'option': 'opt' + this.usedItems.length, 'input': 'in' + this.usedItems.length});
+            this.usedItems.push({'option': 'opt' + this.usedItems.length, 'input': 'in' + this.usedItems.length, 'inventoryNumber': 'invnum' + this.usedItems});
         },
         addInventoryNumberField: function () {
             this.inventoryNumbers.push({'inventoryNumber': 'invnum' + this.inventoryNumbers.length});
+        },
+        async deleteRequest() {
+            this.showDeleteEntryModal = false;
+            await fetchDelete(`/icc/requests/${this.activeId}`)
+            Swal.fire({
+                position: 'top-end',
+                icon: 'success',
+                title: 'Запис успішно видалено',
+                showConfirmButton: false,
+                timer: 1500
+            })
+
+            await this.loadAllRequests();
+        },
+        getNow() {
+            const d = new Date();
+            return d.getFullYear() + '-' + this.fixDate(d.getMonth() + 1) + '-' + this.fixDate(d.getDate()) + '\T' + this.fixDate(d.getHours()) + ':' + this.fixDate(d.getMinutes());
+        },
+        fixDate(date) {
+            if (date < 10) {
+                return '0' + date;
+            } else {
+                return date;
+            }
+        },
+        convertDateToDateTimeFormat(date) {
+
+        },
+        determineTableRowClassName(row, index) {
+            if (row.status === 'Відкрита') {
+                return 'unfinished-request';
+            }
+
+            return '';
         }
     }
 });
-
-function inst() {
-    var request = new HttpRequest();
-    request.sendGETRequest("/icc/requestPanel/getAllRequests", "");
-    request.xmlHttpRequestInstance.onreadystatechange = function (ev) {
-        if (request.isRequestSuccessful()) {
-            // var parsedData = JSON.parse(request.xmlHttpRequestInstance.responseText);
-            // console.log('test');
-            app.gridData = [
-                { name: 'Chuck Norris', power: Infinity },
-                { name: 'Bruce Lee', power: 9000 },
-                { name: 'Jackie Chan', power: 7000 },
-                { name: 'Jet Li', power: 8000 }
-            ];
-        }
-    };
-}
-
-function onCheckButtonClick() {
-    document.getElementById('button').click();
-}
-
-function loadElements() {
-    // alert('added');
-    document.getElementsByTagName('body')[0].innerHTML += '    <div id="prizrak"><button id="slider-right" onclick="closeForm()">закрыть</button>\n' +
-        '        <form method="POST">\n' +
-        '            <label>\n' +
-        '                <div id="items" class="items">\n' +
-        '                    <input type="button" value="Добавить поле+" onClick="AddItem();" ID="add">' +
-        '                </div>\n' +
-        '                <div id="inventory_numbers" class="items">\n' +
-        '                    <br/><input type="button" onclick="addInventoryNumberField()" id="add_inventory" value="Add new field for inventory number">\n' +
-        '                </div>\n' +
-        '                <input name="submit" class="btn" type="submit" value="Отправить" />\n' +
-        '            </label>\n' +
-        '        </form>\n' +
-        '    </div>';
-}
-function getNow() {
-    var d = new Date();
-    console.log(d.getFullYear() + '-' + fixDate(d.getMonth()) + '-' + fixDate(d.getDate()) + '\T' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds());
-    return d.getFullYear() + '-' + fixDate(d.getMonth()) + '-' + fixDate(d.getDate()) + '\T' + fixDate(d.getHours()) + ':' + fixDate(d.getMinutes()) + ':' + fixDate(d.getSeconds());
-}
-function fixDate(date) {
-    if (date < 10) {
-        return '0' + date;
-    } else {
-        return date;
-    }
-}
-var inventory_items = 0;
-function addInventoryNumberField() {
-    var parent = document.getElementById("inventory_numbers");
-    var button = document.getElementById("addInventoryNumberButton");
-    var newItem = "<input type='text' name='invnum" + inventory_items + "' placeholder='Inventory number'><br\>";
-    inventory_items++;
-    var newNode=document.createElement("span");
-    newNode.innerHTML=newItem;
-    parent.insertBefore(newNode, button);
-}
-
-
-
-function closeForm() {
-    var element = document.querySelector("#prizrak");
-    element.remove();
-
-}
-
-function init() {
-    // document.getElementById('slider-left').onclick = sliderLeft;
-    // loadElements();
-    getAllRequests();
-    app.getAllEmployees();
-    app.updateAllStockItemsEntries();
-    // console.log(componentGrid.heroes);
-    // app.chief = app.getChief();
-}
-function sliderLeft() {
-    loadElements();
-    var polosa2 = document.getElementById('prizrak');
-    var g = 1;
-    // var polosa5 = document.getElementById('fon');
-    // polosa5.style.zIndex = "18";
-    // polosa5.style.opacity = "0.8";
-    // polosa5.style.height = 100 + "vh";
-    polosa2.style.opacity = "1";
-    polosa2.style.zIndex = "20";
-}
-
-function initCloseRequestPage() {
-    var buttonForInventoryNumbers = document.getElementById("addInventoryNumberButton");
-    // var buttonForStockItems = document.getElementById("addNewStockItemButton");
-    buttonForInventoryNumbers.onclick = addInventoryNumberField;
-    // buttonForStockItems.onclick = addStockItemField;
-}
-
-function getAllRequests() {
-    var request = new HttpRequest();
-        request.xmlHttpRequestInstance.onreadystatechange = function (ev) {
-            if (request.isRequestSuccessful()) {
-                //Remove old table if it exists
-                // var oldTable = document.getElementById('outputTable');
-                // if (oldTable) {
-                //     oldTable.remove();
-                // }
-                // console.log(request.xmlHttpRequestInstance.responseText);
-                var parsedData = JSON.parse(request.xmlHttpRequestInstance.responseText);
-                for (var i = 0; i < parsedData.length; i++) {
-                        parsedData[i] = {id: parsedData[i][0], 'employee Id': parsedData[i][1], building: parsedData[i][2],
-                        auditorium: parsedData[i][3], reason: parsedData[i][4], date: parsedData[i][5],
-                        status: parsedData[i][6]};
-                }
-                app.gridData = parsedData;
-                // app.gridData = [{name: "123",  power: "asd"}];
-                // outputTable(parsedData);
-                // app.gridData = [
-                //     {}
-                // ];
-
-                // console.log(app.gridData);
-                // console.log(parsedData);
-                // var app = document.getElementsByClassName('main-container')[0];
-                // var table = buildTableFromJson(parsedData);
-                // table.id = "outputTable";
-                //
-                // app.appendChild(table);
-            }
-        };
-        request.sendGETRequest("/icc/requestPanel/getAllRequests", "");
-    // inst();
-}
-
-var tableButtons = [];
-
-function outputTable(jsonParsedTable) {
-    var oldTable = document.getElementById("requestTable");
-    if (oldTable) { oldTable.remove(); }
-    var application = document.getElementsByClassName('main-container')[0];
-
-    var table = buildTableFromJson(jsonParsedTable);
-    table.id = "requestTable";
-    application.appendChild(table);
-}
-
-function clearButtonsFromUnnecessaryText() {
-    for (var i = 0; i < tableButtons.length; i++) {
-
-        tableButtons[i].innerText = "Sort";
-    }
-}
-
-function buildTableFromJson(jsonData) {
-    var table = document.createElement('table');
-    var tr1 = table.insertRow();
-    if (tableButtons.length > 0) {
-        for (var i = 0; i < tableButtons.length; i++) {
-            var td1 = tr1.insertCell();
-            td1.appendChild(tableButtons[i]);
-        }
-
-    } else {
-        console.log(jsonData[0].length);
-        for (let i = 0; i < jsonData[0].length; i++) {
-            var td = tr1.insertCell();
-            var button = document.createElement('button');
-            tableButtons.push(button);
-            button.innerText = "Sort";
-            button.onclick = function (ev) {
-                if (this.innerText === "Sort ˅") {
-                    clearButtonsFromUnnecessaryText();
-                    this.innerText = "Sort ^";
-                    jsonData.sort(function (a, b) {
-                        if (a[i] === b[i]) return 0; else return (a[i] > b[i]) ? -1 : 1;
-                    });
-                    outputTable(jsonData);
-
-                } else if (this.innerText === "Sort ^") {
-                    this.innerText = "Sort";
-                    jsonData.sort(function (a, b) {
-                        if (a[0] === b[0]) return 0; else return (a[0] > b[0]) ? -1 : 1;
-                    });
-                    outputTable(jsonData);
-                } else {
-                    clearButtonsFromUnnecessaryText();
-                    this.innerText = "Sort ˅";
-                    console.log(jsonData);
-                    jsonData.sort(function (a, b) {
-                        if (a[i] === b[i]) return 0; else return (a[i] < b[i]) ? -1 : 1;
-                    });
-                    outputTable(jsonData);
-                }
-            };
-
-            button.value = i;
-            td.appendChild(button);
-        }
-    }
-    for (let i = 0; i < jsonData.length; i++) {
-        var tr = table.insertRow();
-        for (var j = 0; j < jsonData[i].length; j++) {
-            td = tr.insertCell();
-
-            td.appendChild(document.createTextNode(jsonData[i][j]));
-        }
-
-        var tdEdit = tr.insertCell();
-        var tdClose = tr.insertCell();
-        var tdDelete = tr.insertCell();
-        var buttonEdit = document.createElement('button');
-        var buttonClose = document.createElement('button');
-        var buttonDelete = document.createElement('button');
-        buttonEdit.innerText = "E";
-        buttonClose.innerText = "C";
-        buttonDelete.innerText = "D";
-        buttonEdit.value = jsonData[i][0x0];
-        buttonDelete.value = jsonData[i][0];
-        buttonClose.value = jsonData[i][0];
-        buttonEdit.className = "standard-button";
-        buttonClose.className = "standard-button";
-        buttonDelete.className = "standard-button";
-        buttonEdit.onclick = function (ev) { editRequest(this.value); };
-        // buttonClose.onclick = function (ev) { app.showModal = true; console.log(app.showModal) };
-        buttonDelete.onclick = function (ev) { deleteRequest(this.value); };
-        tdEdit.appendChild(buttonEdit);
-        // tdClose.appendChild(buttonClose);
-        tdClose.innerHTML = '<button @click="showModal = true">Show Modal</button>';
-        tdDelete.appendChild(buttonDelete);
-    }
-
-    return table;
-}

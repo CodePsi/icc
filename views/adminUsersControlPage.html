@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/vue"></script>
+    <title>ICC - Users Control Page</title>
+    <script src="/js/http/HttpRequest.js"></script>
+    <link rel="stylesheet" href="/icc/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+</head>
+
+<script type="text/x-template" id="modal-template">
+    <transition name="modal">
+        <div class="modal-mask">
+            <div class="modal-wrapper">
+                <div class="modal-container" v-bind:style="{width: width}">
+
+                    <div class="modal-header">
+                        <slot name="header">
+                            Close request (ID: {{getActiveID()}})
+                        </slot>
+                    </div>
+
+                    <div class="modal-body">
+                        <slot name="body">
+                            Close request (ID: {{getActiveID()}})
+                        </slot>
+                    </div>
+
+                    <div class="modal-footer">
+                        <slot name="footer">
+                            <button class="modal-default-button" @click="$emit('execute')">
+                                OK
+                            </button>
+                            <button class="modal-default-button" @click="$emit('close')">
+                                Close
+                            </button>
+
+                        </slot>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </transition>
+</script>
+<script type="text/x-template" id="grid-template">
+    <div>
+        <table>
+            <thead>
+            <tr>
+                <th v-for="key in columns"
+                    @click="sortBy(key)"
+                    :class="{ active: sortKey == key }">
+                    {{ key | capitalize }}
+                    <span class="arrow" :class="sortOrders[key] > 0 ? 'asc' : 'dsc'">
+          </span>
+                </th>
+                <th style="min-width: 20px"></th>
+                <th style="min-width: 20px"></th>
+                <th style="min-width: 20px"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="entry in filteredHeroes">
+                <td v-for="key in columns">
+                    {{entry[key]}}
+                </td>
+                <td style="min-width: 20px">
+                    <input :value="entry['id']" @click="displayEditUserModalWindow(entry['id'])" type="image" src="/icc/views/images/editIcon.jpg" style="max-width: 20px">
+                </td>
+                <td style="min-width: 20px">
+                    <input :value="entry['id']" @click="displayChangeUserPasswordModalWindow(entry['id'])" type="image" src="/icc/views/images/password_change_icon.png" style="max-width: 20px">
+                </td>
+                <td style="min-width: 20px">
+                    <input :value="entry['id']" @click="displayDeleteUserModalWindow(entry['id'])" type="image" src="/icc/views/images/deleteIcon.png" style="max-width: 20px">
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="table-pagination">
+            <button class="standard-button" v-for="page in pagesArray" @click="setPage(page)">{{page}}</button>
+        </div>
+    </div>
+</script>
+
+<script type="text/x-template" id="icc-header">
+    <header class="header-container">
+        <button class="standard-button" @click="redirect('/icc/control-page/menu')">Головна</button>
+        <button class="standard-button" @click="redirect('/icc/control-page/requests')">Заявки</button>
+        <button class="standard-button" @click="redirect('/icc/control-page/employees')">Працівники</button>
+        <button class="standard-button" @click="redirect('/icc/control-page/stock')">Склад</button>
+        <button class="standard-button" @click="redirect('/icc/control-page/writeOffPage')">Акти списання</button>
+        <button class="standard-button" @click="redirect('/icc/control-page/acts/members')">Члени комісії</button>
+        <button class="standard-button" @click="redirect('/icc/control-page/acts/actOfInstallation')">Акти установки</button>
+    </header>
+</script>
+<body>
+<div id="app">
+    <icc-header></icc-header>
+    <main class="main-container">
+        <div class="content-container">
+            <modal v-if="showNewEntryModal" @execute="closeNewEntryModalWindow()" @close="showNewEntryModal = false">
+                <h3 slot="header">
+                    Додати новий запис
+                </h3>
+                <h3 slot="body">
+                    <label>
+                        <label class="label-box">Логін: <input class="input-box" type="text" v-model="login" placeholder="Login" autocomplete="off"></label>
+                        <label class="label-box">Пароль: <input class="input-box" type="password" v-model="password" placeholder="Password" autocomplete="new-password"></label>
+                        <label class="label-box">Ім'я: <input class="input-box" type="text" v-model="userName" placeholder="Name"></label>
+                    </label>
+                </h3>
+            </modal>
+            <modal v-if="showEditEntryModal" @execute="changeUser()" @close="showEditEntryModal = false">
+                <h3 slot="header">
+                    Редагування запису (ID: {{ activeModalValue }})
+                </h3>
+                <h3 slot="body">
+                    <label>
+                        <label class="label-box">Логін: <input class="input-box" type="text" v-model="login" placeholder="Login" autocomplete="off"></label>
+                        <label class="label-box">Ім'я: <input class="input-box" type="text" v-model="userName" placeholder="Name"></label>
+                    </label>
+                </h3>
+            </modal>
+            <modal v-if="showChangePasswordEntryModal" @execute="changeUserPassword()" @close="showChangePasswordEntryModal = false">
+                <h3 slot="header">
+                    Зміна паролю (ID: {{ activeModalValue }})
+                </h3>
+                <h3 slot="body">
+                    <label>
+                        <label class="label-box">Пароль: <input class="input-box" type="password" v-model="password" placeholder="Password"></label>
+                    </label>
+                </h3>
+            </modal>
+            <modal v-if="showDeleteEntryModal" @close="showDeleteEntryModal = false" @execute="deleteUser()">
+                <h3 slot="header">
+                    Видалення запису (ID: {{ activeModalValue }})
+                </h3>
+                <h3 slot="body">
+                    Ви впевнені?
+                </h3>
+            </modal>
+            <form id="search" class="search-field">
+                <span class="text-caption">Пошук </span><input class="input-box" name="query" v-model="searchQuery" autocomplete="off">
+            </form>
+            <div class="modal-window-page-container">
+                <button @click="openNewEntryUserWindow()" class="usual-actions-button">Додати нового користувача</button>
+            </div>
+
+            <grid
+                    :heroes="gridData"
+                    :columns="gridColumns"
+                    :filter-key="searchQuery">
+            </grid>
+        </div>
+    </main>
+</div>
+<script src="/icc/js/adminUsersControlPage.js"></script>
+</body>
+</html>

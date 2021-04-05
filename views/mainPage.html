@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ICC - Головна</title>
+<!--    <script src="https://unpkg.com/vue"></script>-->
+    <link rel="stylesheet" href="/icc/js/extLibs/element-ui_lib_theme-chalk_index.css">
+    <link href="/icc/css/style.css" rel="stylesheet">
+    <script src="/icc/js/extLibs/vue.js"></script>
+    <script src="/icc/js/extLibs/vuex.js"></script>
+    <script src="/icc/js/extLibs/element-ui_lib_index.js"></script>
+    <script src="/icc/js/extLibs/sweetalert2@9.js"></script>
+    <link rel="stylesheet" href="/icc/js/extLibs/maxcdn.bootstrapcdn.com_font-awesome_4.4.0_css_font-awesome.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="/icc/js/extLibs/element-ui_lib_umd_locale_ua.js"></script>
+</head>
+<body>
+    <script src="/icc/js/components/icc-header.js"></script>
+    <div id="app">
+        <icc-header></icc-header>
+            <main class="main-container">
+                <div class="content-container">
+
+                    <button class="usual-actions-button" @click="openPage('sql-executor')">SQL управління</button>
+                    <a class="usual-actions-button" href="/icc/admin/users-control-page">Налаштування користувачів</a>
+                    <a class="usual-actions-button" href="/icc/control-page/used-items-page">Список використаних предметів</a>
+                </div>
+            </main>
+    </div>
+    <script src="/icc/js/mainPage.js"></script>
+
+</body>
+</html>

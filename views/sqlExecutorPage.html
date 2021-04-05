@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/vue"></script>
+    <title>ICC - SQL Executor</title>
+<!--    <script src="/js/http/HttpRequest.js"></script>-->
+    <link rel="stylesheet" href="/icc/css/style.css">
+</head>
+
+<body>
+<script src="/icc/js/components/icc-header.js"></script>
+<script src="/icc/js/http/FetchUtility.js"></script>
+    <div id="app">
+        <icc-header></icc-header>
+        <main class="main-container">
+            <div class="content-container">
+                <label>
+                    <textarea v-model="sqlText"></textarea>
+                </label>
+                <button class="usual-actions-button" @click="executeSql()">Execute</button>
+                <p v-show="showResults">{{sqlExecutionResult}}</p>
+            </div>
+        </main>
+    </div>
+    <script src="/icc/js/sqlExecutorPage.js"></script>
+</body>
+</html>

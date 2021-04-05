@@ -7,17 +7,22 @@
  *
  */
 
-use Icc\Route\Route;
-require __DIR__ . "/../vendor/autoload.php";
+use Icc\Response\ResponseDataReceiver;
+use Icc\Route\Router;
+require __DIR__ . "/vendor/autoload.php";
 
 require "route.php";
 
+ResponseDataReceiver::initializeJson();
+session_start();
+$router = Router::createRouter();
+\Icc\Database\DBConnector::setDatabaseConfiguration(new \Icc\Database\DatabaseConfiguration());
+//\Icc\DependencyInjection\Container\DIContainer::initiateCoreContainer(\Icc\DependencyInjection\Container\ServiceInjectionContainer::class);
 
-\Icc\Json\JSON::initializeJson();
+require "container.php";
 
-//include "Json/JSON.php";
 
-if ($_SERVER['REDIRECT_STATUS'] != 200) {
-    Route::runPath('errorPage' . $_SERVER['REDIRECT_STATUS']);
+if (isset($_SERVER['REDIRECT_STATUS']) && $_SERVER['REDIRECT_STATUS'] != 200) {
+    $router -> runPath('errorPage' . $_SERVER['REDIRECT_STATUS']);
 }
-Route::runPath($_SERVER['REQUEST_URI']);
+$router -> runPath($_SERVER['REQUEST_URI']);

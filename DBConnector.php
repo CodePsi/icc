@@ -35,5 +35,9 @@ class DBConnector
     public function getLastInsertedId() {
         return self::$mysqli -> insert_id;
     }
+
+    public static function getStatus() {
+        return empty(self::$mysqli -> error) ? "Success" : self::$mysqli -> error;
+    }
 }
 

@@ -4,27 +4,53 @@
 namespace Icc\Model;
 
 
-class Request
+class Request implements \JsonSerializable
 {
+    /**
+     * @var int
+     */
     private $id;
+    /**
+     * @var int
+     */
     private $employeeId;
+    /**
+     * @var string
+     */
     private $building;
+    /**
+     * @var string
+     */
     private $auditorium;
+    /**
+     * @var string
+     */
     private $reason;
+    /**
+     * @var string
+     */
     private $date;
+    /**
+     * @var int
+     */
     private $status;
+    /**
+     * @var int
+     */
+    private $technicalTicketNeeded;
 
     /**
      * Request constructor.
-     * @param $id
-     * @param $employeeId
-     * @param $building
-     * @param $auditorium
-     * @param $reason
-     * @param $date
-     * @param $status
+     * @param int $id
+     * @param int $employeeId
+     * @param string $building
+     * @param string $auditorium
+     * @param string $reason
+     * @param string $date
+     * @param int $status
+     * @param int $technicalTicketNeeded
      */
-    public function __construct($id, $employeeId, $building, $auditorium, $reason, $date, $status)
+    public function __construct(int $id, int $employeeId, string $building, string $auditorium, string $reason, string $date, int $status, int $technicalTicketNeeded)
     {
         $this->id = $id;
         $this->employeeId = $employeeId;
@@ -33,127 +59,147 @@ class Request
         $this->reason = $reason;
         $this->date = $date;
         $this->status = $status;
+        $this->technicalTicketNeeded = $technicalTicketNeeded;
     }
 
 
     /**
-     * @return mixed
+     * @return int
      */
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }
 
     /**
-     * @param mixed $id
+     * @param int $id
      */
-    public function setId($id): void
+    public function setId(int $id): void
     {
         $this->id = $id;
     }
 
     /**
-     * @return mixed
+     * @return int
      */
-    public function getEmployeeId()
+    public function getEmployeeId(): int
     {
         return $this->employeeId;
     }
 
     /**
-     * @param mixed $employeeId
+     * @param int $employeeId
      */
-    public function setEmployeeId($employeeId): void
+    public function setEmployeeId(int $employeeId): void
     {
         $this->employeeId = $employeeId;
     }
 
     /**
-     * @return mixed
+     * @return string
      */
-    public function getBuilding()
+    public function getBuilding(): string
     {
         return $this->building;
     }
 
     /**
-     * @param mixed $building
+     * @param string $building
      */
-    public function setBuilding($building): void
+    public function setBuilding(string $building): void
     {
         $this->building = $building;
     }
 
     /**
-     * @return mixed
+     * @return string
      */
-    public function getAuditorium()
+    public function getAuditorium(): string
     {
         return $this->auditorium;
     }
 
     /**
-     * @param mixed $auditorium
+     * @param string $auditorium
      */
-    public function setAuditorium($auditorium): void
+    public function setAuditorium(string $auditorium): void
     {
         $this->auditorium = $auditorium;
     }
 
     /**
-     * @return mixed
+     * @return string
      */
-    public function getReason()
+    public function getReason(): string
     {
         return $this->reason;
     }
 
     /**
-     * @param mixed $reason
+     * @param string $reason
      */
-    public function setReason($reason): void
+    public function setReason(string $reason): void
     {
         $this->reason = $reason;
     }
 
     /**
-     * @return mixed
+     * @return string
      */
-    public function getDate()
+    public function getDate(): string
     {
         return $this->date;
     }
 
     /**
-     * @param mixed $date
+     * @param string $date
      */
-    public function setDate($date): void
+    public function setDate(string $date): void
     {
         $this->date = $date;
     }
 
     /**
-     * @return mixed
+     * @return int
      */
-    public function getStatus()
+    public function getStatus(): int
     {
         return $this->status;
     }
 
     /**
-     * @param mixed $status
+     * @param int $status
      */
-    public function setStatus($status): void
+    public function setStatus(int $status): void
     {
         $this->status = $status;
     }
+
+    /**
+     * @return int
+     */
+    public function getTechnicalTicketNeeded(): int
+    {
+        return $this->technicalTicketNeeded;
+    }
+
+    /**
+     * @param int $technicalTicketNeeded
+     */
+    public function setTechnicalTicketNeeded(int $technicalTicketNeeded): void
+    {
+        $this->technicalTicketNeeded = $technicalTicketNeeded;
+    }
+
 
     public function toJson(): string {
         return json_encode(array('id' => intval($this -> getId()), 'employeeId' => $this -> getEmployeeId(), 'building' => $this -> getBuilding(), 'auditorium' => $this -> getAuditorium(),
             'reason' => $this -> getReason(), 'date' => $this -> getDate(), 'status' => $this -> getStatus()), JSON_FORCE_OBJECT);
     }
 
-
-
-
+    public function jsonSerialize(): array
+    {
+        return array('id' => $this -> getId(), 'employeeId' => $this -> getEmployeeId(), 'building' => $this -> getBuilding(), 'auditorium' => $this -> getAuditorium(),
+            'reason' => $this -> getReason(), 'date' => $this -> getDate(), 'status' => boolval($this -> getStatus()), 'technicalTicketNeeded' => boolval($this -> getTechnicalTicketNeeded()));
+    }
 }

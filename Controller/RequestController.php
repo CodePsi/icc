@@ -14,14 +14,14 @@ use Icc\Model\InventoryNumber;
 use Icc\Model\NotFoundItemException;
 use Icc\Model\Request;
 use Icc\Model\UsedItem;
-use Icc\MPDFGenerator;
+use Icc\PdfGenerator\MPDFGenerator;
 
 class RequestController
 {
 
     public static function getAllRequests() {
         $dao = new RequestDao();
-        echo json_encode($dao -> getAll());
+        echo json_encode($dao -> convertArrayToModels($dao -> getAll()));
     }
 
     public static function generateRequestDocument(int $id) {
@@ -33,22 +33,23 @@ class RequestController
             $requestInstance = $requestDao -> get($id);
             $inventoryNumbers = $inventoryNumberDao -> where(array('request_id'), array($id), array('='));
             $employeeInstance = $employeeDao -> get($requestInstance -> getEmployeeId());
+            $technicalTicketNeeded = $requestInstance -> getTechnicalTicketNeeded();
             $requestDate = explode(' ', $requestInstance -> getDate());
-            echo base64_encode($pdf -> generateRequest($id, $requestDate[0], $requestDate[1], $employeeInstance -> getName() . ' ' . $employeeInstance -> getSurname() . ' ' . $employeeInstance -> getPatronymic(),
+            echo base64_encode($pdf -> generateRequest($id, $requestDate[0], $requestDate[1], $employeeInstance -> getSurname() . ' ' . $employeeInstance -> getName() . ' ' . $employeeInstance -> getPatronymic(),
                 $employeeInstance -> getPosition(), $employeeInstance -> getContactNumber(), $requestInstance -> getBuilding(),
-                $requestInstance -> getAuditorium(), $inventoryNumbers, $requestInstance -> getReason()));
+                $requestInstance -> getAuditorium(), $inventoryNumbers, $requestInstance -> getReason(), $technicalTicketNeeded));
         } catch (NotFoundItemException $e) {
+            echo $e;
         }
 
     }
 
-    public static function addRequest(int $employeeId, string $building, string $auditorium, string $reason, string $date, int $status)
+    public static function addRequest(int $employeeId, string $building, string $auditorium, string $reason, string $date, int $status, int $technicalTicketNeeded)
     {
         $requestDao = new RequestDao();
-        $request = new Request(-1, $employeeId, $building, $auditorium, $reason, $date, $status);
+        $request = new Request(-1, $employeeId, $building, $auditorium, $reason, $date, intval($status), $technicalTicketNeeded);
         try {
             $requestDao->save($request);
-            echo 'Object has been added successfully!';
         } catch (IncorrectObjectTypeException $e) {
             echo $e;
         }
@@ -58,48 +59,72 @@ class RequestController
     {
         $dao = new RequestDao();
         try {
-//            echo $dao -> get(intval($id)) -> getId();
-            echo $dao -> get(intval($id)) -> toJson();
+            echo json_encode($dao -> get(intval($id)));
         } catch (NotFoundItemException $e) {
             echo $e;
         }
     }
 
-    public static function updateRequest(int $id, int $employeeId, string $building, string $auditorium, string $reason, string $date, int $status)
+    public static function updateRequest(int $id, int $employeeId, string $building, string $auditorium, string $reason, string $date, int $status, int $technicalTicketNeeded)
     {
         $dao = new RequestDao();
-        $request = new Request($id, $employeeId, $building, $auditorium, $reason, $date, $status);
+        $request = new Request($id, $employeeId, $building, $auditorium, $reason, $date, intval($status), $technicalTicketNeeded);
         try {
             $dao->update($request);
-            echo "Success";
         } catch (IncorrectObjectTypeException $e) {
             echo $e;
         }
     }
 
-    public static function closeRequest($usedItems, $inventoryNumbers, $requestId)
+    public static function closeRequest($usedItems, $requestId)
     {
         $usedItemDao = new UsedItemDao();
         $stockItemDao = new StockItemDao();
-        $inventoryNumberDao = new InventoryNumberDao();
-        for ($i = 0; $i < count($usedItems); $i++) {
+        $requestDao = new RequestDao();
+        if (count($usedItems) == 0) {
             try {
-                $usedItem = new UsedItem(-1, $requestId, $usedItems[$i]["select"], $usedItems[$i]["input"], date('Y-m-d H:i:s'), '');
-                $stockItem = $stockItemDao -> get($usedItems[$i]["select"]);
-                $stockItem -> setAmount($stockItem -> getAmount() - $usedItems[$i]["input"]);
-                $stockItemDao -> update($stockItem);
-                $usedItemDao->save($usedItem);
+                $request = $requestDao->get($requestId);
+                $request->setStatus(1);
+                $requestDao->update($request);
             } catch (IncorrectObjectTypeException | NotFoundItemException $e) {
-                echo $e;
+            }
+        } else {
+            for ($i = 0; $i < count($usedItems); $i++) {
+                try {
+                    $usedItem = new UsedItem(-1, $requestId, $usedItems[$i]["itemId"], $usedItems[$i]["count"], date('Y-m-d H:i:s'), $usedItems[$i]['inventoryNumber']);
+                    $stockItem = $stockItemDao->get($usedItems[$i]["itemId"]);
+                    $stockItem->setAmount($stockItem->getAmount() - $usedItems[$i]["count"]);
+                    $stockItem -> setTotal($stockItem -> getAmount() * $stockItem -> getPrice());
+                    $stockItemDao->update($stockItem);
+                    $request = $requestDao->get($requestId);
+                    $request->setStatus(1);
+                    $requestDao->update($request);
+                    $usedItemDao->save($usedItem);
+                } catch (IncorrectObjectTypeException | NotFoundItemException $e) {
+                    echo $e;
+                }
             }
         }
-        for ($i = 0; $i < count($inventoryNumbers); $i++) {
-            try {
-                $inventoryNumber = new InventoryNumber(-1, $requestId, $inventoryNumbers[$i]);
-                $inventoryNumberDao->save($inventoryNumber);
-            } catch (IncorrectObjectTypeException $e) {
-                echo $e;
+    }
+
+    public static function deleteRequest($id) {
+        $dao = new RequestDao();
+        $usedItemDao = new UsedItemDao();
+        $stockItemDao = new StockItemDao();
+        try {
+            $usedItems = $usedItemDao->convertArrayToModels($usedItemDao -> where(array('request_id'), array($id), array('=')));
+            if (isset($usedItems) && count($usedItems) > 0) {
+                foreach ($usedItems as $usedItem) {
+                    $stockItem = $stockItemDao -> get($usedItem -> getItemId());
+                    $stockItem -> setAmount($stockItem -> getAmount() + $usedItem -> getAmount());
+                    $stockItem -> setTotal($stockItem -> getAmount() * $stockItem -> getPrice());
+                    $stockItemDao -> update($stockItem);
+                    $usedItemDao -> delete($usedItem -> getId());
+                }
             }
+            $dao -> delete($id);
+        } catch (NotFoundItemException $e) {
+            echo $e;
         }
     }
 }

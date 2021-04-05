@@ -4,7 +4,7 @@
 namespace Icc\Dao;
 
 
-use Icc\DBConnector;
+use Icc\Database\DBConnector;
 use Icc\Model\Employee;
 use Icc\Model\IncorrectObjectTypeException;
 use Icc\Model\NotFoundItemException;
@@ -17,7 +17,7 @@ class EmployeeDao extends AbstractDao implements Dao, ModelConverter
 
     public function __construct()
     {
-        $this -> connection = new DBConnector();
+        $this -> connection = DBConnector::getInstance();
     }
 
     /**
@@ -29,7 +29,7 @@ class EmployeeDao extends AbstractDao implements Dao, ModelConverter
     {
         $item = $this -> connection -> execute_query("SELECT * FROM employee WHERE id=$id");
         if (!$item || $item -> num_rows === 0) {
-            throw new NotFoundItemException("Not found item. Error: " . DBConnector::$mysqli -> error);
+            return new Employee(-1, '', '', '', '', '', '', 0);
         }
 
         return $this -> convertMysqlResultToModel($item);
@@ -120,5 +120,23 @@ class EmployeeDao extends AbstractDao implements Dao, ModelConverter
             $fetchedRow[5],
             $fetchedRow[6],
             $fetchedRow[7]);
+    }
+
+    function convertArrayToModels(array $array): array
+    {
+        $resultArray = array();
+        foreach ($array as $value) {
+            Utils::cleanArrayFromNull($value);
+            array_push($resultArray, new Employee($value[0],
+                $value[1],
+                $value[2],
+                $value[3],
+                $value[4],
+                $value[5],
+                $value[6],
+                $value[7]));
+        }
+
+        return $resultArray;
     }
 }
